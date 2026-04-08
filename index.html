@@ -7,17 +7,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Segoe UI', Roboto; }
-    
-    /* Тёмная тема (по умолчанию) */
     body { background: #0a0a0c; color: #eee; padding: 16px; transition: background 0.2s, color 0.2s; }
     body.light { background: #f0f0f0; color: #111; }
     body.light .card { background: rgba(255,255,255,0.95); border-color: #ff9900; color: #111; }
     body.light input, body.light select, body.light textarea { background: #fff; color: #111; border-color: #ccc; }
     body.light .btn { background: #e0e0e0; color: #111; }
     body.light .task-item { background: #f5f5f5; }
-    
     .container { max-width: 700px; margin: 0 auto; }
-    .card { background: rgba(24,24,28,0.95); border-radius: 28px; padding: 18px; margin-bottom: 16px; border: 1px solid rgba(255,153,0,0.3); transition: 0.2s; }
+    .card { background: rgba(24,24,28,0.95); border-radius: 28px; padding: 18px; margin-bottom: 16px; border: 1px solid rgba(255,153,0,0.3); }
     h1 { font-size: 1.8rem; background: linear-gradient(135deg,#ffb347,#ff9900); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; }
     .btn { background: #2c2c32; border: none; color: white; padding: 10px 16px; border-radius: 60px; font-weight: bold; cursor: pointer; margin: 4px 0; }
     .btn-primary { background: #ff9900; color: #0a0a0c; }
@@ -34,9 +31,8 @@
     .badge { background: #ff9900; color: #000; padding: 4px 12px; border-radius: 60px; font-weight: bold; font-size: 0.75rem; }
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff9900; color: #000; padding: 12px 24px; border-radius: 60px; z-index: 999; animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-    @keyframes fall { to { transform: translateY(100vh); opacity:0; } }
     .photo-upload { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .settings-icon { font-size: 1.8rem; cursor: pointer; background: none; border: none; padding: 0 10px; }
+    .settings-icon { font-size: 1.8rem; cursor: pointer; background: none; border: none; padding: 0 10px; color: #ff9900; }
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
     .modal-content { background: #1e1e24; border-radius: 28px; padding: 20px; width: 90%; max-width: 400px; }
     body.light .modal-content { background: #fff; }
@@ -131,7 +127,7 @@
 </div>
 
 <script>
-  // ========== SUPABASE НАСТРОЙКИ ==========
+  // ========== НАСТРОЙКИ SUPABASE ==========
   const SUPABASE_URL = "https://sebsaslqngrvjsywtrjz.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNhc2xqbmdydmpzeXd0cmp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NzIwMjEsImV4cCI6MjA5MTI0ODAyMX0.tka6zqyCwhR10pGPul-9H6e57CO18Rk4BEda1YLHUj8";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -141,13 +137,13 @@
 
   // ========== ГЕНЕРАТОР ЗАДАЧ ==========
   const taskPools = {
-    discipline: ["Сделай {count} отжиманий","Прочитай {count} страниц","Помедитируй {minutes} мин","Заправь кровать","План на день из {count} пунктов","Час без телефона","Зарядка: {exercise}","Выучи {count} слов","Убери на столе","Прогулка {minutes} мин","Дыши {count} циклов","Напиши 3 мысли"],
-    money: ["Изучи {count} терминов","Отправь резюме","Просмотри бюджет","Карьерная задача","Курс {minutes} мин","Новый контакт","Запиши траты","Идея для подработки","Полезное действие","Статья про инвестиции","Навык: {skill}","Список целей"],
-    apathy: ["Доброе дело","Выйди на улицу {minutes} мин","Одно достижение","Уборка {minutes} мин","Свяжись с другом","Микрозадача: {micro}","Музыка {minutes} мин","5 вдохов","Благодарность","Простое упражнение","Погладь себя","Стакан воды"]
+    discipline: ["Сделай {count} отжиманий","Прочитай {count} страниц","Помедитируй {minutes} мин","Заправь кровать","План на день из {count} пунктов","Час без телефона","Зарядка: {exercise}","Выучи {count} слов","Убери на столе","Прогулка {minutes} мин"],
+    money: ["Изучи {count} терминов","Отправь резюме","Просмотри бюджет","Карьерная задача","Курс {minutes} мин","Новый контакт","Запиши траты","Идея для подработки","Навык: {skill}","Список целей"],
+    apathy: ["Доброе дело","Выйди на улицу {minutes} мин","Одно достижение","Уборка {minutes} мин","Свяжись с другом","Микрозадача: {micro}","Музыка {minutes} мин","5 вдохов","Благодарность","Стакан воды"]
   };
-  const exercises = ["приседания","планка","пресс","йога","прыжки"];
-  const skills = ["Excel","Python","Английский","Презентации"];
-  const micros = ["выбросить мусор","помыть чашку","растяжка 1 мин","написать смс"];
+  const exercises = ["приседания","планка","пресс","йога"];
+  const skills = ["Excel","Python","Английский"];
+  const micros = ["выбросить мусор","помыть чашку","растяжка"];
 
   function getDailyTasks(goal, difficulty, streak, mood) {
     let templates = taskPools[goal] || taskPools.discipline;
@@ -188,20 +184,19 @@
       // Новый пользователь — получаем следующий ID
       let { data: counterData } = await supabase.from('counter').select('last_id').single();
       let newId = counterData ? counterData.last_id + 1 : 1;
-      if (currentUser.email === 'assakill799@gmail.com') newId = 0; // твой ID 00000
-      await supabase.from('counter').upsert({ last_id: newId });
+      if (currentUser.email === 'assakill799@gmail.com') newId = 0;
+      await supabase.from('counter').upsert({ id: 1, last_id: newId });
       const userIdNumber = String(newId).padStart(5, '0');
       
       userData = {
-        id: currentUser.id, nickname: currentUser.email.split('@')[0], balance: 0, streak: 0,
-        best_streak: 0, premium_until: 0, goal: 'discipline', mood: 'normal',
-        difficulty: 'normal', history: [], task_history: [], last_date: null,
-        daily_tasks: [], completed_tasks: [], verification: null,
-        user_number: userIdNumber, theme: 'dark'
+        id: currentUser.id, nickname: currentUser.user_metadata?.nickname || currentUser.email.split('@')[0], 
+        balance: 0, streak: 0, best_streak: 0, premium_until: 0, 
+        goal: 'discipline', mood: 'normal', difficulty: 'normal', 
+        history: [], last_date: null, daily_tasks: [], completed_tasks: [], 
+        verification: null, user_number: userIdNumber, theme: 'dark'
       };
       await supabase.from('users').insert(userData);
     }
-    // Применяем тему
     if (userData.theme === 'light') document.body.classList.add('light');
     else document.body.classList.remove('light');
     document.getElementById('themeSelect').value = userData.theme || 'dark';
@@ -402,7 +397,6 @@
     renderDashboard();
   };
   document.getElementById('changePasswordBtn').onclick = async () => {
-    let oldPass = document.getElementById('oldPasswordInput').value;
     let newPass = document.getElementById('newPasswordInput').value;
     if (newPass.length < 6) { alert("Новый пароль должен быть не менее 6 символов"); return; }
     let { error } = await supabase.auth.updateUser({ password: newPass });
@@ -417,28 +411,53 @@
   };
   document.getElementById('logoutSettingsBtn').onclick = () => supabase.auth.signOut();
 
-  // ========== АВТОРИЗАЦИЯ ==========
-  document.getElementById('loginTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='block'; document.getElementById('registerPanel').style.display='none'; };
-  document.getElementById('registerTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='block'; };
+  // ========== АВТОРИЗАЦИЯ (ПРОСТАЯ И ПОНЯТНАЯ) ==========
+  document.getElementById('loginTabBtn').onclick = () => { 
+    document.getElementById('loginPanel').style.display = 'block'; 
+    document.getElementById('registerPanel').style.display = 'none'; 
+  };
+  document.getElementById('registerTabBtn').onclick = () => { 
+    document.getElementById('loginPanel').style.display = 'none'; 
+    document.getElementById('registerPanel').style.display = 'block'; 
+  };
+  
   document.getElementById('doLoginBtn').onclick = async () => {
-    let { error } = await supabase.auth.signInWithPassword({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value });
-    if (error) alert(error.message); else alert("Добро пожаловать!");
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert("Ошибка входа: " + error.message);
+    else alert("Добро пожаловать!");
   };
+  
   document.getElementById('doRegisterBtn').onclick = async () => {
-    let nick = document.getElementById('regNick').value.trim();
-    let email = document.getElementById('regEmail').value;
-    let password = document.getElementById('regPassword').value;
+    const nick = document.getElementById('regNick').value.trim();
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
     if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: буквы/цифры/_, 3-20 символов"); return; }
-    let { error } = await supabase.auth.signUp({ email, password, options: { data: { nickname: nick } } });
-    if (error) alert(error.message); else alert("Регистрация успешна! Теперь войдите.");
+    const { error } = await supabase.auth.signUp({ 
+      email, password, 
+      options: { data: { nickname: nick } } 
+    });
+    if (error) alert("Ошибка регистрации: " + error.message);
+    else alert("Регистрация успешна! Проверьте email (если требуется подтверждение) и войдите.");
   };
+  
   document.getElementById('getAdviceBtn').onclick = getAdvice;
   document.getElementById('buyPremiumBtn').onclick = buyPremium;
   document.getElementById('trialPremiumBtn').onclick = trialPremium;
   document.getElementById('withdrawBtn').onclick = requestWithdraw;
   document.getElementById('kaspiPayBtn').onclick = kaspiPay;
-  document.getElementById('refreshTasksBtn').onclick = async () => { if(userData){ userData.daily_tasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood); userData.completed_tasks=[]; await updateUserData({daily_tasks: userData.daily_tasks, completed_tasks:[]}); renderDashboard(); alert("Задачи обновлены"); } };
+  document.getElementById('refreshTasksBtn').onclick = async () => { 
+    if(userData){ 
+      userData.daily_tasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood); 
+      userData.completed_tasks=[]; 
+      await updateUserData({daily_tasks: userData.daily_tasks, completed_tasks:[]}); 
+      renderDashboard(); 
+      alert("Задачи обновлены"); 
+    } 
+  };
 
+  // Слушатель авторизации
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
       currentUser = session.user;
@@ -451,6 +470,7 @@
       document.getElementById('authScreen').style.display = 'block';
       document.getElementById('mainApp').style.display = 'none';
       currentUser = null;
+      userData = null;
     }
   });
 </script>
