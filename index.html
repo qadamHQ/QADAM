@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Qadam — Дисциплина + заработок до 100₸/день</title>
+  <!-- Firebase SDK (модульная версия) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
+    // Твой конфиг
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIbAqGui9JGmW0yUO50ERS3W7B3U-8dQE",
+      authDomain: "qadam-8ca31.firebaseapp.com",
+      projectId: "qadam-8ca31",
+      storageBucket: "qadam-8ca31.firebasestorage.app",
+      messagingSenderId: "647005035162",
+      appId: "1:647005035162:web:6352bed70bdea8ab3a5d23",
+      measurementId: "G-GH5FH36STD"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    window.auth = auth;
+    window.db = db;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.updateProfile = updateProfile;
+    window.onAuthStateChanged = onAuthStateChanged;
+    window.signOut = signOut;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+    window.updateDoc = updateDoc;
+    window.getDocs = getDocs;
+    window.collection = collection;
+    window.query = query;
+    window.where = where;
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui; }
+    body { background: #0a0a0c; color: #eee; padding: 20px; }
+    .container { max-width: 700px; margin: 0 auto; }
+    .card { background: rgba(24,24,28,0.95); border-radius: 32px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,153,0,0.3); transition: 0.2s; }
+    .card:hover { transform: translateY(-2px); border-color: #ff9900; }
+    h1 { font-size: 2.4rem; background: linear-gradient(135deg,#ffb347,#ff9900); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .btn { background: #2c2c32; border: none; color: white; padding: 10px 20px; border-radius: 60px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-primary { background: #ff9900; color: #0a0a0c; }
+    .btn-primary:hover { background: #ffaa33; transform: scale(0.97); }
+    input, select, textarea { background: #1e1e24; border: 1px solid #3a3a40; border-radius: 28px; padding: 12px 18px; color: white; width: 100%; margin-bottom: 12px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .streak-bar { background: #222; border-radius: 40px; height: 12px; overflow: hidden; margin: 12px 0; }
+    .streak-fill { width: 0%; height: 100%; background: linear-gradient(90deg,#ff9900,#ffcd4a); transition: width 0.5s; }
+    .task-item { background: #131316; border-radius: 24px; padding: 14px; margin: 12px 0; display: flex; justify-content: space-between; border-left: 4px solid #ff9900; }
+    .badge { background: #ff9900; color: #000; padding: 4px 12px; border-radius: 60px; font-weight: bold; font-size: 0.8rem; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff9900; color: #000; padding: 12px 24px; border-radius: 60px; z-index: 999; animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    .premium-badge { background: gold; color: #1a1a1a; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Экран авторизации / регистрации -->
+  <div id="authScreen" class="card" style="text-align: center;">
+    <h1>QADAM</h1>
+    <p style="margin: 16px 0;">Дисциплина + заработок до 100 ₸/день</p>
+    <div id="authTabs" class="flex-between" style="margin-bottom: 20px;">
+      <button id="loginTabBtn" class="btn btn-primary" style="flex:1; margin-right: 8px;">Вход</button>
+      <button id="registerTabBtn" class="btn" style="flex:1;">Регистрация</button>
+    </div>
+    <div id="loginPanel">
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Пароль">
+      <button id="doLoginBtn" class="btn btn-primary">Войти</button>
+    </div>
+    <div id="registerPanel" style="display: none;">
+      <input type="text" id="regNick" placeholder="Уникальный ник (буквы/цифры/_, 3-20 символов)">
+      <input type="email" id="regEmail" placeholder="Email">
+      <input type="password" id="regPassword" placeholder="Пароль">
+      <div style="font-size: 12px; color: #aaa; margin-bottom: 12px;">⚠️ Сохрани пароль! Восстановить будет нельзя.</div>
+      <button id="doRegisterBtn" class="btn btn-primary">Создать аккаунт</button>
+    </div>
+  </div>
+
+  <!-- Основной дашборд (показывается после логина) -->
+  <div id="mainApp" style="display: none;">
+    <div class="flex-between"><h1>QADAM</h1><div><span class="badge" id="premiumBadge">⚡ Обычный</span><span class="badge" id="balanceBadge" style="margin-left: 8px;">💰 0 ₸</span></div></div>
+    <div class="card">
+      <div class="flex-between"><span>🔥 Серия: <span id="streakDays">0</span> дней</span><span>🏆 Лучшая: <span id="bestStreak">0</span></span></div>
+      <div class="streak-bar"><div class="streak-fill" id="streakFill"></div></div>
+      <div class="flex-between"><span>🎯 Цель: <span id="goalLabel"></span></span><span>😊 Настроение: <span id="moodLabel"></span></span></div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between"><h3>📋 Задачи дня</h3><button id="refreshTasksBtn" class="btn">🔄</button></div>
+      <div id="tasksList"></div>
+      <div id="dailyRewardInfo" style="margin-top: 12px; font-size: 13px;">⭐ За все задачи +100 ₸</div>
+    </div>
+
+    <div class="card">
+      <h3>✍️ Мысли и советы</h3>
+      <textarea id="thoughtInput" rows="2" placeholder="Что чувствуешь?"></textarea>
+      <button id="getAdviceBtn" class="btn btn-primary" style="width:100%">Получить совет</button>
+      <div id="adviceOutput" class="card" style="margin-top: 12px; display: none;"></div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Настройки</h3>
+      <select id="difficultySelect"><option value="soft">🌿 Мягкая</option><option value="normal" selected>⚖️ Нормальная</option><option value="hard">🔥 Жёсткая</option></select>
+      <select id="comparisonMode"><option value="self">🧘 Сравнивать с собой</option><option value="friends">👥 Сравнивать с друзьями (бета)</option></select>
+      <button id="logoutBtn" class="btn" style="background:#3a281c; margin-top: 12px;">🚪 Выйти</button>
+    </div>
+
+    <div class="card">
+      <h3>💸 Кошелёк</h3>
+      <p>Баланс: <strong id="walletBalance">0</strong> ₸</p>
+      <button id="buyPremiumBtn" class="btn btn-primary">Купить Premium (1000 ₸/неделя)</button>
+      <button id="trialPremiumBtn" class="btn">Пробная версия 3 дня (бесплатно)</button>
+      <button id="withdrawBtn" class="btn" style="margin-top: 12px;">📤 Запросить вывод (от 5000 ₸)</button>
+      <div style="font-size:12px; margin-top: 8px;">За полное выполнение задач сегодня: +100 ₸ (макс в день)</div>
+    </div>
+
+    <div class="card">
+      <h3>📜 История</h3>
+      <div id="historyList">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Глобальные переменные
+  let currentUser = null;
+  let userData = null; // { streak, lastDate, completedTasks, dailyTasks, goal, mood, balance, premiumUntil, bestStreak, history, difficulty, comparisonMode }
+  
+  async function updateUserData(uid, updates) {
+    const ref = doc(db, "users", uid);
+    await updateDoc(ref, updates);
+    if (userData) Object.assign(userData, updates);
+  }
+  
+  async function loadUserData(uid) {
+    const ref = doc(db, "users", uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      userData = snap.data();
+    } else {
+      userData = {
+        streak: 0, lastDate: null, completedTasks: [], dailyTasks: [],
+        goal: "discipline", mood: "normal", balance: 0, premiumUntil: 0,
+        bestStreak: 0, history: [], difficulty: "normal", comparisonMode: "self"
+      };
+      await setDoc(ref, userData);
+    }
+    renderDashboard();
+  }
+  
+  function generateTasks(goal, difficulty, streak, mood) {
+    const pools = {
+      discipline: { soft:["Медитация 5 мин","Заправить кровать","10 стр книги"], normal:["Зарядка","План дня","Час без телефона"], hard:["Подъём 6:00","Тренировка 30 мин","Дневник"] },
+      money: { soft:["Записать траты","Статья по финансам","Отклик на вакансию"], normal:["Задача из карьеры","20 мин курса","Нетворкинг"], hard:["Подать резюме","Анализ доходов","Новый навык 1 час"] },
+      apathy: { soft:["Прогулка 10 мин","Дыхание","Одна мысль"], normal:["Уборка","Связаться с другом","Мини-победа"], hard:["Физическая активность","Запустить проект","Утренний ритуал"] }
+    };
+    let tasks = pools[goal]?.[difficulty] || pools.discipline.normal;
+    if (streak >= 5) tasks = tasks.map(t => "⭐ " + t);
+    if (streak === 0) tasks = tasks.map(t => "🌀 " + t);
+    let count = mood === "motivation" ? 4 : (mood === "empty" ? 2 : 3);
+    return tasks.slice(0, count);
+  }
+  
+  async function checkNewDay() {
+    const today = new Date().toISOString().slice(0,10);
+    if (!userData.lastDate) { userData.lastDate = today; return; }
+    if (userData.lastDate === today) return;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    let penalty = 0;
+    if (userData.lastDate !== yesterday) penalty = userData.streak;
+    else if (userData.completedTasks.length !== userData.dailyTasks.length && userData.dailyTasks.length > 0) {
+      if (userData.difficulty === 'hard') penalty = 3;
+      else if (userData.difficulty === 'normal') penalty = 1;
+      else penalty = 0.5;
+      penalty = Math.min(penalty, userData.streak);
+      addHistory(`❌ Штраф: -${Math.floor(penalty)} дней`, -Math.floor(penalty));
+    }
+    if (penalty > 0) userData.streak = Math.max(0, userData.streak - Math.floor(penalty));
+    userData.lastDate = today;
+    userData.completedTasks = [];
+    userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
+    await updateUserData(currentUser.uid, { streak: userData.streak, lastDate: userData.lastDate, completedTasks: [], dailyTasks: userData.dailyTasks });
+    renderDashboard();
+  }
+  
+  async function completeTask(taskIndex) {
+    if (userData.completedTasks.includes(taskIndex)) return;
+    userData.completedTasks.push(taskIndex);
+    await updateUserData(currentUser.uid, { completedTasks: userData.completedTasks });
+    const allDone = userData.completedTasks.length === userData.dailyTasks.length;
+    if (allDone) {
+      let addMoney = 100;
+      userData.balance += addMoney;
+      userData.streak += 1;
+      if (userData.streak > userData.bestStreak) userData.bestStreak = userData.streak;
+      addHistory(`✅ Выполнены все задачи! +100 ₸, серия ${userData.streak}`, 1);
+      showToast(`🎉 +100 ₸! Серия ${userData.streak} дней`);
+      await updateUserData(currentUser.uid, { balance: userData.balance, streak: userData.streak, bestStreak: userData.bestStreak });
+      if (userData.streak % 3 === 0) {
+        showToast("🎁 БОНУС! 3 дня подряд! Конфетти 🎉");
+        burstConfetti();
+        addHistory(`🎁 Бонус за серию ${userData.streak} дней`, 0);
+      }
+    } else {
+      await updateUserData(currentUser.uid, { completedTasks: userData.completedTasks });
+      showToast(`✅ Задача выполнена! Осталось ${userData.dailyTasks.length - userData.completedTasks.length}`);
+    }
+    renderDashboard();
+  }
+  
+  function addHistory(text, deltaStreak) {
+    const time = new Date().toLocaleString();
+    userData.history.unshift({ time, text, delta: deltaStreak });
+    if (userData.history.length > 30) userData.history.pop();
+    updateUserData(currentUser.uid, { history: userData.history });
+    renderHistory();
+  }
+  
+  function showToast(msg) {
+    let t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
+  }
+  
+  function burstConfetti() {
+    for(let i=0;i<50;i++){
+      let c=document.createElement('div'); 
+      c.style.cssText='position:fixed;width:6px;height:6px;background:#ff9900;border-radius:50%;left:'+Math.random()*100+'%;top:-10px;animation:fall 1s linear forwards;'; 
+      document.body.appendChild(c); 
+      setTimeout(()=>c.remove(),1000);
+    }
+  }
+  
+  async function renderDashboard() {
+    if (!userData) return;
+    document.getElementById('streakDays').innerText = userData.streak;
+    document.getElementById('bestStreak').innerText = userData.bestStreak;
+    let percent = Math.min(100, (userData.streak/(userData.streak+7))*100);
+    document.getElementById('streakFill').style.width = percent+'%';
+    const goalMap = {discipline:'Дисциплина',money:'Карьера',apathy:'Апатия→Сила'};
+    document.getElementById('goalLabel').innerText = goalMap[userData.goal] || '—';
+    const moodMap = {empty:'Пусто',normal:'Норм',anger:'Злость',motivation:'Мощь'};
+    document.getElementById('moodLabel').innerText = moodMap[userData.mood];
+    document.getElementById('walletBalance').innerText = userData.balance;
+    const premiumActive = userData.premiumUntil > Date.now();
+    document.getElementById('premiumBadge').innerHTML = premiumActive ? '👑 Premium' : '⚡ Обычный';
+    
+    let tasksHtml = '';
+    userData.dailyTasks.forEach((t, idx) => {
+      let done = userData.completedTasks.includes(idx);
+      tasksHtml += `<div class="task-item" style="border-left-color: ${done?'#2ecc71':'#ff9900'}"><span style="${done?'text-decoration:line-through;opacity:0.7':''}">${t}</span><div><button class="taskCompleteBtn" data-idx="${idx}" style="background:none; font-size:1.5rem;">✅</button></div></div>`;
+    });
+    document.getElementById('tasksList').innerHTML = tasksHtml;
+    document.querySelectorAll('.taskCompleteBtn').forEach(btn => btn.addEventListener('click', (e) => completeTask(parseInt(btn.dataset.idx))));
+    renderHistory();
+  }
+  
+  function renderHistory() {
+    let html = userData.history.slice(0,10).map(h => `<div><small>${h.time}</small> ${h.text}</div>`).join('');
+    document.getElementById('historyList').innerHTML = html || '—';
+  }
+  
+  async function getAdvice() {
+    let thought = document.getElementById('thoughtInput').value.trim();
+    if (!thought) { showToast('Напиши что-нибудь'); return; }
+    let advice = "Твой путь важен. Сделай сегодня хотя бы одну микро-задачу.";
+    if (thought.includes('лень')) advice = "Лень — защита. Начни с 2 минут, и поедет.";
+    if (thought.includes('устал')) advice = "Отдых — часть дисциплины. Возьми 5 минут тишины.";
+    document.getElementById('adviceOutput').innerHTML = `<strong>🧠 Qadam советует:</strong> ${advice}`;
+    document.getElementById('adviceOutput').style.display = 'block';
+    addHistory(`Рефлексия: ${thought.slice(0,40)}...`, 0);
+  }
+  
+  async function buyPremium() {
+    if (userData.balance >= 1000) {
+      userData.balance -= 1000;
+      userData.premiumUntil = Date.now() + 7*24*3600*1000;
+      await updateUserData(currentUser.uid, { balance: userData.balance, premiumUntil: userData.premiumUntil });
+      showToast('Premium активирован на неделю!');
+      renderDashboard();
+    } else { showToast('Недостаточно тенге. Выполняй задачи!'); }
+  }
+  
+  async function trialPremium() {
+    if (userData.premiumUntil && userData.premiumUntil > Date.now()) { showToast('У тебя уже есть премиум'); return; }
+    userData.premiumUntil = Date.now() + 3*24*3600*1000;
+    await updateUserData(currentUser.uid, { premiumUntil: userData.premiumUntil });
+    showToast('Пробная версия на 3 дня активирована!');
+    renderDashboard();
+  }
+  
+  async function requestWithdraw() {
+    if (userData.balance >= 5000) {
+      addHistory(`💰 Заявка на вывод ${userData.balance} ₸. Админ свяжется вручную.`, 0);
+      showToast('Заявка отправлена! Деньги выплатит Амин.');
+    } else { showToast('Минимум 5000 ₸'); }
+  }
+  
+  // Auth handlers
+  window.onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      await loadUserData(user.uid);
+      await checkNewDay();
+      renderDashboard();
+    } else {
+      document.getElementById('authScreen').style.display = 'block';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+  });
+  
+  document.getElementById('loginTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='block'; document.getElementById('registerPanel').style.display='none'; };
+  document.getElementById('registerTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='block'; };
+  document.getElementById('doLoginBtn').onclick = async () => {
+    let email = document.getElementById('loginEmail').value;
+    let pass = document.getElementById('loginPassword').value;
+    try { await signInWithEmailAndPassword(auth, email, pass); showToast('Добро пожаловать!'); } catch(e) { showToast('Ошибка входа: '+e.message); }
+  };
+  document.getElementById('doRegisterBtn').onclick = async () => {
+    let nick = document.getElementById('regNick').value.trim();
+    let email = document.getElementById('regEmail').value;
+    let pass = document.getElementById('regPassword').value;
+    if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { showToast('Ник: буквы/цифры/_, 3-20 символов'); return; }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: nick });
+      const nickRef = doc(db, 'nicks', nick);
+      const nickSnap = await getDoc(nickRef);
+      if (nickSnap.exists()) { showToast('Ник уже занят'); await cred.user.delete(); return; }
+      await setDoc(nickRef, { uid: cred.user.uid });
+      showToast('Регистрация успешна! Сохрани пароль.');
+    } catch(e) { showToast('Ошибка: '+e.message); }
+  };
+  document.getElementById('logoutBtn').onclick = () => signOut(auth);
+  document.getElementById('getAdviceBtn').onclick = getAdvice;
+  document.getElementById('buyPremiumBtn').onclick = buyPremium;
+  document.getElementById('trialPremiumBtn').onclick = trialPremium;
+  document.getElementById('withdrawBtn').onclick = requestWithdraw;
+  document.getElementById('difficultySelect').onchange = async (e) => { userData.difficulty = e.target.value; await updateUserData(currentUser.uid, { difficulty: userData.difficulty }); renderDashboard(); };
+  document.getElementById('refreshTasksBtn').onclick = async () => { if(userData.goal) { userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood); userData.completedTasks = []; await updateUserData(currentUser.uid, { dailyTasks: userData.dailyTasks, completedTasks: [] }); renderDashboard(); showToast('Задачи обновлены'); } };
+  
+  const styleSheet = document.createElement("style"); styleSheet.textContent = `@keyframes fall { to { transform: translateY(100vh); opacity:0; } }`; document.head.appendChild(styleSheet);
+</script>
+</body>
+</html>
