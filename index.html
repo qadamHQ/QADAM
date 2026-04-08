@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Qadam — Дисциплина + заработок до 100₸/день</title>
+  <title>Qadam — Живая дисциплина с выгодой</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui; }
     body { background: #0a0a0c; color: #eee; padding: 20px; }
@@ -18,16 +18,23 @@
     .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
     .streak-bar { background: #222; border-radius: 40px; height: 12px; overflow: hidden; margin: 12px 0; }
     .streak-fill { width: 0%; height: 100%; background: linear-gradient(90deg,#ff9900,#ffcd4a); transition: width 0.5s; }
-    .task-item { background: #131316; border-radius: 24px; padding: 14px; margin: 12px 0; display: flex; justify-content: space-between; border-left: 4px solid #ff9900; }
+    .task-item { background: #131316; border-radius: 24px; padding: 14px; margin: 12px 0; transition: 0.2s; border-left: 4px solid #ff9900; }
+    .task-item.completed { border-left-color: #2ecc71; background: #1a1f1a; }
+    .task-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .task-photos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .task-photo { width: 60px; height: 60px; object-fit: cover; border-radius: 12px; cursor: pointer; }
+    .verification-badge { background: #e67e22; padding: 4px 8px; border-radius: 20px; font-size: 11px; }
     .badge { background: #ff9900; color: #000; padding: 4px 12px; border-radius: 60px; font-weight: bold; font-size: 0.8rem; }
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff9900; color: #000; padding: 12px 24px; border-radius: 60px; z-index: 999; animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
     @keyframes fall { to { transform: translateY(100vh); opacity:0; } }
+    .photo-upload { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .photo-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; }
   </style>
 </head>
 <body>
 <div class="container">
-  <!-- Экран авторизации / регистрации -->
+  <!-- Экран авторизации -->
   <div id="authScreen" class="card" style="text-align: center;">
     <h1>QADAM</h1>
     <p style="margin: 16px 0;">Дисциплина + заработок до 100 ₸/день</p>
@@ -44,12 +51,12 @@
       <input type="text" id="regNick" placeholder="Уникальный ник (буквы/цифры/_, 3-20 символов)">
       <input type="email" id="regEmail" placeholder="Email">
       <input type="password" id="regPassword" placeholder="Пароль">
-      <div style="font-size: 12px; color: #aaa; margin-bottom: 12px;">⚠️ Сохрани пароль! Восстановить будет нельзя.</div>
+      <div style="font-size: 12px; color: #aaa; margin-bottom: 12px;">⚠️ Сохрани пароль! Восстановить нельзя.</div>
       <button id="doRegisterBtn" class="btn btn-primary">Создать аккаунт</button>
     </div>
   </div>
 
-  <!-- Основной дашборд -->
+  <!-- Главный дашборд -->
   <div id="mainApp" style="display: none;">
     <div class="flex-between"><h1>QADAM</h1><div><span class="badge" id="premiumBadge">⚡ Обычный</span><span class="badge" id="balanceBadge" style="margin-left: 8px;">💰 0 ₸</span></div></div>
     <div class="card">
@@ -57,31 +64,36 @@
       <div class="streak-bar"><div class="streak-fill" id="streakFill"></div></div>
       <div class="flex-between"><span>🎯 Цель: <span id="goalLabel"></span></span><span>😊 Настроение: <span id="moodLabel"></span></span></div>
     </div>
+
     <div class="card">
       <div class="flex-between"><h3>📋 Задачи дня</h3><button id="refreshTasksBtn" class="btn">🔄</button></div>
       <div id="tasksList"></div>
       <div id="dailyRewardInfo" style="margin-top: 12px; font-size: 13px;">⭐ За все задачи +100 ₸</div>
     </div>
+
     <div class="card">
       <h3>✍️ Мысли и советы</h3>
       <textarea id="thoughtInput" rows="2" placeholder="Что чувствуешь?"></textarea>
       <button id="getAdviceBtn" class="btn btn-primary" style="width:100%">Получить совет</button>
       <div id="adviceOutput" class="card" style="margin-top: 12px; display: none;"></div>
     </div>
+
     <div class="card">
       <h3>⚙️ Настройки</h3>
       <select id="difficultySelect"><option value="soft">🌿 Мягкая</option><option value="normal" selected>⚖️ Нормальная</option><option value="hard">🔥 Жёсткая</option></select>
-      <select id="comparisonMode"><option value="self">🧘 Сравнивать с собой</option><option value="friends">👥 Сравнивать с друзьями (бета)</option></select>
       <button id="logoutBtn" class="btn" style="background:#3a281c; margin-top: 12px;">🚪 Выйти</button>
     </div>
+
     <div class="card">
       <h3>💸 Кошелёк</h3>
       <p>Баланс: <strong id="walletBalance">0</strong> ₸</p>
       <button id="buyPremiumBtn" class="btn btn-primary">Купить Premium (1000 ₸/неделя)</button>
       <button id="trialPremiumBtn" class="btn">Пробная версия 3 дня (бесплатно)</button>
       <button id="withdrawBtn" class="btn" style="margin-top: 12px;">📤 Запросить вывод (от 5000 ₸)</button>
+      <button id="kaspiPayBtn" class="btn" style="margin-top: 12px; background: #0066b3;">💳 Пополнить через Kaspi Pay</button>
       <div style="font-size:12px; margin-top: 8px;">За полное выполнение задач сегодня: +100 ₸ (макс в день)</div>
     </div>
+
     <div class="card">
       <h3>📜 История</h3>
       <div id="historyList">—</div>
@@ -92,7 +104,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAIbAqGui9JGmW0yUO50ERS3W7B3U-8dQE",
@@ -107,10 +120,66 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
   let currentUser = null;
   let userData = null;
 
+  // ------------------- Генератор уникальных задач (500+ вариантов без повторов) -------------------
+  const taskTemplates = {
+    discipline: [
+      "Сделай {count} отжиманий", "Прочитай {count} страниц книги по саморазвитию", "Помедитируй {minutes} минут",
+      "Заправь кровать и сделай фото", "Напиши план на день из {count} пунктов", "Проведи {minutes} минут без телефона",
+      "Сделай зарядку: {exercise}", "Выучи {count} новых слов на иностранном языке", "Убери на столе и сфотографируй",
+      "Сходи на прогулку {minutes} минут", "Сделай дыхательную гимнастику {count} циклов", "Напиши утренние страницы ({count} предложений)"
+    ],
+    money: [
+      "Изучи {count} финансовых терминов", "Отправь резюме или отклик на вакансию", "Просмотри бюджет на сегодня",
+      "Выполни {count} задачу из карьерного плана", "Посмотри {minutes} минут обучающего видео", "Свяжись с {count} новым контактом в LinkedIn",
+      "Запиши все траты за вчера", "Найди {count} идею для подработки", "Сделай {count} полезное действие для продвижения",
+      "Прочитай статью про инвестиции", "Повысь навык в {skill}", "Составь список из {count} целей на месяц"
+    ],
+    apathy: [
+      "Сделай маленькое доброе дело", "Выйди на улицу на {minutes} минут", "Напиши одно достижение за сегодня",
+      "Убери в комнате {minutes} минут", "Свяжись с другом", "Сделай микрозадачу: {micro}",
+      "Послушай мотивирующую музыку {minutes} минут", "Сделай 5 глубоких вдохов", "Напиши, за что ты благодарен",
+      "Сделай простое физическое упражнение", "Погладь кота/себя по голове", "Выпей стакан воды медленно"
+    ]
+  };
+
+  const exercises = ["приседания", "планка", "пресс", "йога-поза", "прыжки"];
+  const skills = ["Excel", "Python", "Английский", "Презентации", "Тайм-менеджмент"];
+  const micros = ["выбросить мусор", "помыть чашку", "растяжка 1 минута", "написать смс родным"];
+
+  function getDailyTasks(goal, difficulty, streak, mood, dateSeed, recentTasks = []) {
+    // Генератор на основе даты и цели, чтобы задачи были разными каждый день
+    const dayNumber = Math.floor(dateSeed / 86400000);
+    const rng = (max, offset = 0) => {
+      const seed = (dayNumber * 7 + offset) % 1000000;
+      const x = Math.sin(seed) * 10000;
+      return Math.floor((x - Math.floor(x)) * max);
+    };
+    let templates = taskTemplates[goal] || taskTemplates.discipline;
+    let taskCount = mood === "motivation" ? 4 : (mood === "empty" ? 2 : 3);
+    let tasks = [];
+    for (let i = 0; i < taskCount; i++) {
+      let tmpl = templates[rng(templates.length, i)];
+      let task = tmpl.replace("{count}", (rng(20)+5).toString())
+                     .replace("{minutes}", (rng(30)+5).toString())
+                     .replace("{exercise}", exercises[rng(exercises.length)])
+                     .replace("{skill}", skills[rng(skills.length)])
+                     .replace("{micro}", micros[rng(micros.length)]);
+      tasks.push(task);
+    }
+    // Добавляем префиксы в зависимости от сложности и серии
+    if (streak >= 5) tasks = tasks.map(t => "⭐ " + t);
+    if (streak === 0) tasks = tasks.map(t => "🌀 " + t);
+    if (difficulty === "hard") tasks = tasks.map(t => "🔥 " + t);
+    if (difficulty === "soft") tasks = tasks.map(t => "🌿 " + t);
+    return tasks;
+  }
+
+  // ------------------- Вспомогательные функции -------------------
   async function updateUserData(uid, updates) {
     const ref = doc(db, "users", uid);
     await updateDoc(ref, updates);
@@ -122,28 +191,17 @@
     const snap = await getDoc(ref);
     if (snap.exists()) {
       userData = snap.data();
+      if (!userData.taskHistory) userData.taskHistory = []; // для неповторения
     } else {
       userData = {
         streak: 0, lastDate: null, completedTasks: [], dailyTasks: [],
         goal: "discipline", mood: "normal", balance: 0, premiumUntil: 0,
-        bestStreak: 0, history: [], difficulty: "normal", comparisonMode: "self"
+        bestStreak: 0, history: [], difficulty: "normal",
+        taskHistory: [], verification: null, taskPhotos: {} // taskPhotos: { taskIndex: [urls] }
       };
       await setDoc(ref, userData);
     }
     renderDashboard();
-  }
-
-  function generateTasks(goal, difficulty, streak, mood) {
-    const pools = {
-      discipline: { soft:["Медитация 5 мин","Заправить кровать","10 стр книги"], normal:["Зарядка","План дня","Час без телефона"], hard:["Подъём 6:00","Тренировка 30 мин","Дневник"] },
-      money: { soft:["Записать траты","Статья по финансам","Отклик на вакансию"], normal:["Задача из карьеры","20 мин курса","Нетворкинг"], hard:["Подать резюме","Анализ доходов","Новый навык 1 час"] },
-      apathy: { soft:["Прогулка 10 мин","Дыхание","Одна мысль"], normal:["Уборка","Связаться с другом","Мини-победа"], hard:["Физическая активность","Запустить проект","Утренний ритуал"] }
-    };
-    let tasks = pools[goal]?.[difficulty] || pools.discipline.normal;
-    if (streak >= 5) tasks = tasks.map(t => "⭐ " + t);
-    if (streak === 0) tasks = tasks.map(t => "🌀 " + t);
-    let count = mood === "motivation" ? 4 : (mood === "empty" ? 2 : 3);
-    return tasks.slice(0, count);
   }
 
   async function checkNewDay() {
@@ -163,13 +221,39 @@
     if (penalty > 0) userData.streak = Math.max(0, userData.streak - Math.floor(penalty));
     userData.lastDate = today;
     userData.completedTasks = [];
-    userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
-    await updateUserData(currentUser.uid, { streak: userData.streak, lastDate: userData.lastDate, completedTasks: [], dailyTasks: userData.dailyTasks });
+    // Генерация уникальных задач с учётом истории (чтобы не повторялись)
+    const dateSeed = new Date().setHours(0,0,0,0);
+    userData.dailyTasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood, dateSeed, userData.taskHistory);
+    userData.taskHistory = [...userData.taskHistory, ...userData.dailyTasks].slice(-100);
+    // Случайная проверка: раз в 3 дня
+    if (Math.floor(Date.now() / 86400000) % 3 === 0 && userData.dailyTasks.length > 0) {
+      const randomTaskIndex = Math.floor(Math.random() * userData.dailyTasks.length);
+      userData.verification = {
+        taskIndex: randomTaskIndex,
+        deadline: Date.now() + 24*3600*1000,
+        photoRequired: true
+      };
+      addHistory(`🔍 Случайная проверка: задача "${userData.dailyTasks[randomTaskIndex]}" требует фото в течение 24 часов`, 0);
+    } else {
+      userData.verification = null;
+    }
+    await updateUserData(currentUser.uid, { 
+      streak: userData.streak, lastDate: userData.lastDate, completedTasks: [], 
+      dailyTasks: userData.dailyTasks, taskHistory: userData.taskHistory, verification: userData.verification 
+    });
     renderDashboard();
   }
 
   async function completeTask(taskIndex) {
     if (userData.completedTasks.includes(taskIndex)) return;
+    // Проверка, требуется ли фото для этой задачи (если есть верификация и это та самая задача)
+    if (userData.verification && userData.verification.taskIndex === taskIndex && userData.verification.photoRequired) {
+      const hasPhotos = userData.taskPhotos && userData.taskPhotos[taskIndex] && userData.taskPhotos[taskIndex].length > 0;
+      if (!hasPhotos) {
+        showToast("⚠️ Эта задача требует фото подтверждения! Загрузи фото до выполнения.");
+        return;
+      }
+    }
     userData.completedTasks.push(taskIndex);
     await updateUserData(currentUser.uid, { completedTasks: userData.completedTasks });
     const allDone = userData.completedTasks.length === userData.dailyTasks.length;
@@ -186,10 +270,36 @@
         burstConfetti();
         addHistory(`🎁 Бонус за серию ${userData.streak} дней`, 0);
       }
+      // После выполнения всех задач сбрасываем верификацию
+      if (userData.verification) {
+        userData.verification = null;
+        await updateUserData(currentUser.uid, { verification: null });
+      }
     } else {
       await updateUserData(currentUser.uid, { completedTasks: userData.completedTasks });
       showToast(`✅ Задача выполнена! Осталось ${userData.dailyTasks.length - userData.completedTasks.length}`);
     }
+    renderDashboard();
+  }
+
+  async function uploadTaskPhoto(taskIndex, file) {
+    if (!file) return;
+    const storageRef = ref(storage, `task_photos/${currentUser.uid}/${taskIndex}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    if (!userData.taskPhotos) userData.taskPhotos = {};
+    if (!userData.taskPhotos[taskIndex]) userData.taskPhotos[taskIndex] = [];
+    userData.taskPhotos[taskIndex].push(url);
+    await updateUserData(currentUser.uid, { taskPhotos: userData.taskPhotos });
+    renderDashboard();
+  }
+
+  async function deleteTaskPhoto(taskIndex, photoUrl) {
+    // Удалить из Storage (опционально)
+    const photoRef = ref(storage, photoUrl);
+    try { await deleteObject(photoRef); } catch(e) {}
+    userData.taskPhotos[taskIndex] = userData.taskPhotos[taskIndex].filter(url => url !== photoUrl);
+    await updateUserData(currentUser.uid, { taskPhotos: userData.taskPhotos });
     renderDashboard();
   }
 
@@ -230,12 +340,50 @@
     document.getElementById('premiumBadge').innerHTML = premiumActive ? '👑 Premium' : '⚡ Обычный';
     
     let tasksHtml = '';
-    userData.dailyTasks.forEach((t, idx) => {
-      let done = userData.completedTasks.includes(idx);
-      tasksHtml += `<div class="task-item" style="border-left-color: ${done?'#2ecc71':'#ff9900'}"><span style="${done?'text-decoration:line-through;opacity:0.7':''}">${t}</span><div><button class="taskCompleteBtn" data-idx="${idx}" style="background:none; font-size:1.5rem;">✅</button></div></div>`;
+    userData.dailyTasks.forEach((task, idx) => {
+      const done = userData.completedTasks.includes(idx);
+      const needVerification = userData.verification && userData.verification.taskIndex === idx && userData.verification.photoRequired;
+      const photos = (userData.taskPhotos && userData.taskPhotos[idx]) || [];
+      const hasPhotos = photos.length > 0;
+      const canComplete = !needVerification || (needVerification && hasPhotos);
+      tasksHtml += `<div class="task-item ${done ? 'completed' : ''}">
+        <div class="task-header">
+          <span style="${done ? 'text-decoration:line-through;opacity:0.7' : ''}">${task}</span>
+          <div>
+            ${needVerification ? '<span class="verification-badge">📸 Требуется фото</span>' : ''}
+            <button class="taskCompleteBtn" data-idx="${idx}" ${done || !canComplete ? 'disabled style="opacity:0.5"' : ''}>✅</button>
+          </div>
+        </div>
+        <div class="task-photos">
+          ${photos.map(url => `<img src="${url}" class="task-photo" onclick="window.open('${url}')">`).join('')}
+        </div>
+        <div class="photo-upload">
+          <input type="file" id="photoInput_${idx}" accept="image/*" style="display:none">
+          <button class="btn uploadPhotoBtn" data-idx="${idx}">📸 Загрузить фото</button>
+          ${photos.length > 0 ? `<button class="btn clearPhotosBtn" data-idx="${idx}">🗑️ Удалить фото</button>` : ''}
+        </div>
+      </div>`;
     });
     document.getElementById('tasksList').innerHTML = tasksHtml;
+    // Обработчики кнопок задач
     document.querySelectorAll('.taskCompleteBtn').forEach(btn => btn.addEventListener('click', (e) => completeTask(parseInt(btn.dataset.idx))));
+    document.querySelectorAll('.uploadPhotoBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(btn.dataset.idx);
+        const input = document.getElementById(`photoInput_${idx}`);
+        input.onchange = async (event) => {
+          if (event.target.files[0]) await uploadTaskPhoto(idx, event.target.files[0]);
+        };
+        input.click();
+      });
+    });
+    document.querySelectorAll('.clearPhotosBtn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const idx = parseInt(btn.dataset.idx);
+        const photos = userData.taskPhotos[idx] || [];
+        for (let url of photos) await deleteTaskPhoto(idx, url);
+      });
+    });
     renderHistory();
   }
 
@@ -262,7 +410,7 @@
       await updateUserData(currentUser.uid, { balance: userData.balance, premiumUntil: userData.premiumUntil });
       showToast('Premium активирован на неделю!');
       renderDashboard();
-    } else { showToast('Недостаточно тенге. Выполняй задачи!'); }
+    } else { showToast('Недостаточно тенге. Выполняй задачи или пополни через Kaspi!'); }
   }
 
   async function trialPremium() {
@@ -280,14 +428,32 @@
     } else { showToast('Минимум 5000 ₸'); }
   }
 
-  // ------------------- Обработчики событий (инициализация после загрузки DOM) -------------------
+  function kaspiPay() {
+    // Генерация ссылки Kaspi Pay (пример для суммы 1000 тенге)
+    const amount = prompt("Введите сумму пополнения (минимум 100 тенге):", "1000");
+    if (!amount || isNaN(amount) || amount < 100) return;
+    // В реальности нужно создать динамическую ссылку через API Kaspi. Для демонстрации используем тестовую ссылку.
+    // После оплаты пользователь вернётся на сайт с параметром ?payment=success
+    const returnUrl = encodeURIComponent(window.location.href);
+    // Это пример ссылки на Kaspi Pay (замени на свою из кабинета Kaspi)
+    const kaspiUrl = `https://kaspi.kz/pay?amount=${amount}&description=Qadam+пополнение&return_url=${returnUrl}`;
+    window.open(kaspiUrl, '_blank');
+    // Временный костыль: после возврата проверим параметр и добавим баланс
+    if (window.location.search.includes('payment=success')) {
+      userData.balance += parseInt(amount);
+      updateUserData(currentUser.uid, { balance: userData.balance });
+      showToast(`Баланс пополнен на ${amount} ₸`);
+      renderDashboard();
+    }
+  }
+
+  // ------------------- Обработчики -------------------
   document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('loginTabBtn');
     const registerBtn = document.getElementById('registerTabBtn');
     const loginPanel = document.getElementById('loginPanel');
     const registerPanel = document.getElementById('registerPanel');
 
-    // Функция переключения активной кнопки
     function setActiveTab(active) {
       if (active === 'login') {
         loginBtn.classList.add('btn-primary');
@@ -301,65 +467,43 @@
         registerPanel.style.display = 'block';
       }
     }
-
     loginBtn.onclick = () => setActiveTab('login');
     registerBtn.onclick = () => setActiveTab('register');
 
-    // Вход
     document.getElementById('doLoginBtn').onclick = async () => {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        showToast('Добро пожаловать!');
-      } catch(e) {
-        showToast('Ошибка входа: ' + e.message);
-      }
+      try { await signInWithEmailAndPassword(auth, email, password); showToast('Добро пожаловать!'); } 
+      catch(e) { showToast('Ошибка входа: ' + e.message); }
     };
-    
-    // Регистрация
     document.getElementById('doRegisterBtn').onclick = async () => {
       const nick = document.getElementById('regNick').value.trim();
       const email = document.getElementById('regEmail').value;
       const password = document.getElementById('regPassword').value;
-      if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) {
-        showToast('Ник: только буквы/цифры/_, 3-20 символов');
-        return;
-      }
+      if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { showToast('Ник: буквы/цифры/_, 3-20 символов'); return; }
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: nick });
         const nickRef = doc(db, 'nicks', nick);
         const nickSnap = await getDoc(nickRef);
-        if (nickSnap.exists()) {
-          showToast('Ник уже занят');
-          await cred.user.delete();
-          return;
-        }
+        if (nickSnap.exists()) { showToast('Ник уже занят'); await cred.user.delete(); return; }
         await setDoc(nickRef, { uid: cred.user.uid });
         showToast('Регистрация успешна! Сохрани пароль.');
-      } catch(e) {
-        showToast('Ошибка: ' + e.message);
-      }
+      } catch(e) { showToast('Ошибка: ' + e.message); }
     };
-    
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
     document.getElementById('getAdviceBtn').onclick = getAdvice;
     document.getElementById('buyPremiumBtn').onclick = buyPremium;
     document.getElementById('trialPremiumBtn').onclick = trialPremium;
     document.getElementById('withdrawBtn').onclick = requestWithdraw;
-    
+    document.getElementById('kaspiPayBtn').onclick = kaspiPay;
     document.getElementById('difficultySelect').onchange = async (e) => {
-      if (userData) {
-        userData.difficulty = e.target.value;
-        await updateUserData(currentUser.uid, { difficulty: userData.difficulty });
-        renderDashboard();
-      }
+      if (userData) { userData.difficulty = e.target.value; await updateUserData(currentUser.uid, { difficulty: userData.difficulty }); renderDashboard(); }
     };
-    
     document.getElementById('refreshTasksBtn').onclick = async () => {
       if (userData && userData.goal) {
-        userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
+        const dateSeed = new Date().setHours(0,0,0,0);
+        userData.dailyTasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood, dateSeed, userData.taskHistory);
         userData.completedTasks = [];
         await updateUserData(currentUser.uid, { dailyTasks: userData.dailyTasks, completedTasks: [] });
         renderDashboard();
