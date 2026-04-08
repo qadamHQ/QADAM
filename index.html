@@ -4,43 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Qadam — Дисциплина + заработок до 100₸/день</title>
-  <!-- Firebase SDK (модульная версия) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    
-    // Твой конфиг
-    const firebaseConfig = {
-      apiKey: "AIzaSyAIbAqGui9JGmW0yUO50ERS3W7B3U-8dQE",
-      authDomain: "qadam-8ca31.firebaseapp.com",
-      projectId: "qadam-8ca31",
-      storageBucket: "qadam-8ca31.firebasestorage.app",
-      messagingSenderId: "647005035162",
-      appId: "1:647005035162:web:6352bed70bdea8ab3a5d23",
-      measurementId: "G-GH5FH36STD"
-    };
-    
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    
-    window.auth = auth;
-    window.db = db;
-    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-    window.updateProfile = updateProfile;
-    window.onAuthStateChanged = onAuthStateChanged;
-    window.signOut = signOut;
-    window.doc = doc;
-    window.setDoc = setDoc;
-    window.getDoc = getDoc;
-    window.updateDoc = updateDoc;
-    window.getDocs = getDocs;
-    window.collection = collection;
-    window.query = query;
-    window.where = where;
-  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui; }
     body { background: #0a0a0c; color: #eee; padding: 20px; }
@@ -59,7 +22,7 @@
     .badge { background: #ff9900; color: #000; padding: 4px 12px; border-radius: 60px; font-weight: bold; font-size: 0.8rem; }
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff9900; color: #000; padding: 12px 24px; border-radius: 60px; z-index: 999; animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-    .premium-badge { background: gold; color: #1a1a1a; }
+    @keyframes fall { to { transform: translateY(100vh); opacity:0; } }
   </style>
 </head>
 <body>
@@ -86,7 +49,7 @@
     </div>
   </div>
 
-  <!-- Основной дашборд (показывается после логина) -->
+  <!-- Основной дашборд -->
   <div id="mainApp" style="display: none;">
     <div class="flex-between"><h1>QADAM</h1><div><span class="badge" id="premiumBadge">⚡ Обычный</span><span class="badge" id="balanceBadge" style="margin-left: 8px;">💰 0 ₸</span></div></div>
     <div class="card">
@@ -94,27 +57,23 @@
       <div class="streak-bar"><div class="streak-fill" id="streakFill"></div></div>
       <div class="flex-between"><span>🎯 Цель: <span id="goalLabel"></span></span><span>😊 Настроение: <span id="moodLabel"></span></span></div>
     </div>
-
     <div class="card">
       <div class="flex-between"><h3>📋 Задачи дня</h3><button id="refreshTasksBtn" class="btn">🔄</button></div>
       <div id="tasksList"></div>
       <div id="dailyRewardInfo" style="margin-top: 12px; font-size: 13px;">⭐ За все задачи +100 ₸</div>
     </div>
-
     <div class="card">
       <h3>✍️ Мысли и советы</h3>
       <textarea id="thoughtInput" rows="2" placeholder="Что чувствуешь?"></textarea>
       <button id="getAdviceBtn" class="btn btn-primary" style="width:100%">Получить совет</button>
       <div id="adviceOutput" class="card" style="margin-top: 12px; display: none;"></div>
     </div>
-
     <div class="card">
       <h3>⚙️ Настройки</h3>
       <select id="difficultySelect"><option value="soft">🌿 Мягкая</option><option value="normal" selected>⚖️ Нормальная</option><option value="hard">🔥 Жёсткая</option></select>
       <select id="comparisonMode"><option value="self">🧘 Сравнивать с собой</option><option value="friends">👥 Сравнивать с друзьями (бета)</option></select>
       <button id="logoutBtn" class="btn" style="background:#3a281c; margin-top: 12px;">🚪 Выйти</button>
     </div>
-
     <div class="card">
       <h3>💸 Кошелёк</h3>
       <p>Баланс: <strong id="walletBalance">0</strong> ₸</p>
@@ -123,7 +82,6 @@
       <button id="withdrawBtn" class="btn" style="margin-top: 12px;">📤 Запросить вывод (от 5000 ₸)</button>
       <div style="font-size:12px; margin-top: 8px;">За полное выполнение задач сегодня: +100 ₸ (макс в день)</div>
     </div>
-
     <div class="card">
       <h3>📜 История</h3>
       <div id="historyList">—</div>
@@ -131,17 +89,34 @@
   </div>
 </div>
 
-<script>
-  // Глобальные переменные
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAIbAqGui9JGmW0yUO50ERS3W7B3U-8dQE",
+    authDomain: "qadam-8ca31.firebaseapp.com",
+    projectId: "qadam-8ca31",
+    storageBucket: "qadam-8ca31.firebasestorage.app",
+    messagingSenderId: "647005035162",
+    appId: "1:647005035162:web:6352bed70bdea8ab3a5d23",
+    measurementId: "G-GH5FH36STD"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
   let currentUser = null;
-  let userData = null; // { streak, lastDate, completedTasks, dailyTasks, goal, mood, balance, premiumUntil, bestStreak, history, difficulty, comparisonMode }
-  
+  let userData = null;
+
   async function updateUserData(uid, updates) {
     const ref = doc(db, "users", uid);
     await updateDoc(ref, updates);
     if (userData) Object.assign(userData, updates);
   }
-  
+
   async function loadUserData(uid) {
     const ref = doc(db, "users", uid);
     const snap = await getDoc(ref);
@@ -157,7 +132,7 @@
     }
     renderDashboard();
   }
-  
+
   function generateTasks(goal, difficulty, streak, mood) {
     const pools = {
       discipline: { soft:["Медитация 5 мин","Заправить кровать","10 стр книги"], normal:["Зарядка","План дня","Час без телефона"], hard:["Подъём 6:00","Тренировка 30 мин","Дневник"] },
@@ -170,7 +145,7 @@
     let count = mood === "motivation" ? 4 : (mood === "empty" ? 2 : 3);
     return tasks.slice(0, count);
   }
-  
+
   async function checkNewDay() {
     const today = new Date().toISOString().slice(0,10);
     if (!userData.lastDate) { userData.lastDate = today; return; }
@@ -192,7 +167,7 @@
     await updateUserData(currentUser.uid, { streak: userData.streak, lastDate: userData.lastDate, completedTasks: [], dailyTasks: userData.dailyTasks });
     renderDashboard();
   }
-  
+
   async function completeTask(taskIndex) {
     if (userData.completedTasks.includes(taskIndex)) return;
     userData.completedTasks.push(taskIndex);
@@ -217,7 +192,7 @@
     }
     renderDashboard();
   }
-  
+
   function addHistory(text, deltaStreak) {
     const time = new Date().toLocaleString();
     userData.history.unshift({ time, text, delta: deltaStreak });
@@ -225,12 +200,12 @@
     updateUserData(currentUser.uid, { history: userData.history });
     renderHistory();
   }
-  
+
   function showToast(msg) {
     let t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
     document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
   }
-  
+
   function burstConfetti() {
     for(let i=0;i<50;i++){
       let c=document.createElement('div'); 
@@ -239,7 +214,7 @@
       setTimeout(()=>c.remove(),1000);
     }
   }
-  
+
   async function renderDashboard() {
     if (!userData) return;
     document.getElementById('streakDays').innerText = userData.streak;
@@ -263,12 +238,12 @@
     document.querySelectorAll('.taskCompleteBtn').forEach(btn => btn.addEventListener('click', (e) => completeTask(parseInt(btn.dataset.idx))));
     renderHistory();
   }
-  
+
   function renderHistory() {
     let html = userData.history.slice(0,10).map(h => `<div><small>${h.time}</small> ${h.text}</div>`).join('');
     document.getElementById('historyList').innerHTML = html || '—';
   }
-  
+
   async function getAdvice() {
     let thought = document.getElementById('thoughtInput').value.trim();
     if (!thought) { showToast('Напиши что-нибудь'); return; }
@@ -279,7 +254,7 @@
     document.getElementById('adviceOutput').style.display = 'block';
     addHistory(`Рефлексия: ${thought.slice(0,40)}...`, 0);
   }
-  
+
   async function buyPremium() {
     if (userData.balance >= 1000) {
       userData.balance -= 1000;
@@ -289,7 +264,7 @@
       renderDashboard();
     } else { showToast('Недостаточно тенге. Выполняй задачи!'); }
   }
-  
+
   async function trialPremium() {
     if (userData.premiumUntil && userData.premiumUntil > Date.now()) { showToast('У тебя уже есть премиум'); return; }
     userData.premiumUntil = Date.now() + 3*24*3600*1000;
@@ -297,16 +272,103 @@
     showToast('Пробная версия на 3 дня активирована!');
     renderDashboard();
   }
-  
+
   async function requestWithdraw() {
     if (userData.balance >= 5000) {
       addHistory(`💰 Заявка на вывод ${userData.balance} ₸. Админ свяжется вручную.`, 0);
       showToast('Заявка отправлена! Деньги выплатит Амин.');
     } else { showToast('Минимум 5000 ₸'); }
   }
-  
-  // Auth handlers
-  window.onAuthStateChanged(auth, async (user) => {
+
+  // ------------------- Обработчики событий (инициализация после загрузки DOM) -------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    const loginBtn = document.getElementById('loginTabBtn');
+    const registerBtn = document.getElementById('registerTabBtn');
+    const loginPanel = document.getElementById('loginPanel');
+    const registerPanel = document.getElementById('registerPanel');
+
+    // Функция переключения активной кнопки
+    function setActiveTab(active) {
+      if (active === 'login') {
+        loginBtn.classList.add('btn-primary');
+        registerBtn.classList.remove('btn-primary');
+        loginPanel.style.display = 'block';
+        registerPanel.style.display = 'none';
+      } else {
+        registerBtn.classList.add('btn-primary');
+        loginBtn.classList.remove('btn-primary');
+        loginPanel.style.display = 'none';
+        registerPanel.style.display = 'block';
+      }
+    }
+
+    loginBtn.onclick = () => setActiveTab('login');
+    registerBtn.onclick = () => setActiveTab('register');
+
+    // Вход
+    document.getElementById('doLoginBtn').onclick = async () => {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast('Добро пожаловать!');
+      } catch(e) {
+        showToast('Ошибка входа: ' + e.message);
+      }
+    };
+    
+    // Регистрация
+    document.getElementById('doRegisterBtn').onclick = async () => {
+      const nick = document.getElementById('regNick').value.trim();
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) {
+        showToast('Ник: только буквы/цифры/_, 3-20 символов');
+        return;
+      }
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(cred.user, { displayName: nick });
+        const nickRef = doc(db, 'nicks', nick);
+        const nickSnap = await getDoc(nickRef);
+        if (nickSnap.exists()) {
+          showToast('Ник уже занят');
+          await cred.user.delete();
+          return;
+        }
+        await setDoc(nickRef, { uid: cred.user.uid });
+        showToast('Регистрация успешна! Сохрани пароль.');
+      } catch(e) {
+        showToast('Ошибка: ' + e.message);
+      }
+    };
+    
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+    document.getElementById('getAdviceBtn').onclick = getAdvice;
+    document.getElementById('buyPremiumBtn').onclick = buyPremium;
+    document.getElementById('trialPremiumBtn').onclick = trialPremium;
+    document.getElementById('withdrawBtn').onclick = requestWithdraw;
+    
+    document.getElementById('difficultySelect').onchange = async (e) => {
+      if (userData) {
+        userData.difficulty = e.target.value;
+        await updateUserData(currentUser.uid, { difficulty: userData.difficulty });
+        renderDashboard();
+      }
+    };
+    
+    document.getElementById('refreshTasksBtn').onclick = async () => {
+      if (userData && userData.goal) {
+        userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
+        userData.completedTasks = [];
+        await updateUserData(currentUser.uid, { dailyTasks: userData.dailyTasks, completedTasks: [] });
+        renderDashboard();
+        showToast('Задачи обновлены');
+      }
+    };
+  });
+
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUser = user;
       document.getElementById('authScreen').style.display = 'none';
@@ -317,40 +379,10 @@
     } else {
       document.getElementById('authScreen').style.display = 'block';
       document.getElementById('mainApp').style.display = 'none';
+      currentUser = null;
+      userData = null;
     }
   });
-  
-  document.getElementById('loginTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='block'; document.getElementById('registerPanel').style.display='none'; };
-  document.getElementById('registerTabBtn').onclick = () => { document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='block'; };
-  document.getElementById('doLoginBtn').onclick = async () => {
-    let email = document.getElementById('loginEmail').value;
-    let pass = document.getElementById('loginPassword').value;
-    try { await signInWithEmailAndPassword(auth, email, pass); showToast('Добро пожаловать!'); } catch(e) { showToast('Ошибка входа: '+e.message); }
-  };
-  document.getElementById('doRegisterBtn').onclick = async () => {
-    let nick = document.getElementById('regNick').value.trim();
-    let email = document.getElementById('regEmail').value;
-    let pass = document.getElementById('regPassword').value;
-    if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { showToast('Ник: буквы/цифры/_, 3-20 символов'); return; }
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(cred.user, { displayName: nick });
-      const nickRef = doc(db, 'nicks', nick);
-      const nickSnap = await getDoc(nickRef);
-      if (nickSnap.exists()) { showToast('Ник уже занят'); await cred.user.delete(); return; }
-      await setDoc(nickRef, { uid: cred.user.uid });
-      showToast('Регистрация успешна! Сохрани пароль.');
-    } catch(e) { showToast('Ошибка: '+e.message); }
-  };
-  document.getElementById('logoutBtn').onclick = () => signOut(auth);
-  document.getElementById('getAdviceBtn').onclick = getAdvice;
-  document.getElementById('buyPremiumBtn').onclick = buyPremium;
-  document.getElementById('trialPremiumBtn').onclick = trialPremium;
-  document.getElementById('withdrawBtn').onclick = requestWithdraw;
-  document.getElementById('difficultySelect').onchange = async (e) => { userData.difficulty = e.target.value; await updateUserData(currentUser.uid, { difficulty: userData.difficulty }); renderDashboard(); };
-  document.getElementById('refreshTasksBtn').onclick = async () => { if(userData.goal) { userData.dailyTasks = generateTasks(userData.goal, userData.difficulty, userData.streak, userData.mood); userData.completedTasks = []; await updateUserData(currentUser.uid, { dailyTasks: userData.dailyTasks, completedTasks: [] }); renderDashboard(); showToast('Задачи обновлены'); } };
-  
-  const styleSheet = document.createElement("style"); styleSheet.textContent = `@keyframes fall { to { transform: translateY(100vh); opacity:0; } }`; document.head.appendChild(styleSheet);
 </script>
 </body>
 </html>
