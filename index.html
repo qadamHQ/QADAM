@@ -50,24 +50,21 @@
       <button id="registerTabBtn" class="btn" style="flex:1;">Регистрация</button>
     </div>
     
-    <!-- Форма входа -->
     <div id="loginPanel">
       <input type="email" id="loginEmail" placeholder="Email">
       <input type="password" id="loginPassword" placeholder="Пароль">
       <button id="doLoginBtn" class="btn btn-primary" style="width:100%;">Войти</button>
     </div>
     
-    <!-- Форма регистрации (скрыта по умолчанию) -->
     <div id="registerPanel" style="display: none;">
-      <input type="text" id="regNick" placeholder="Ник (буквы/цифры/_, 3-20 символов)">
+      <input type="text" id="regNick" placeholder="Ник (латиница/цифры/_, 3-20 символов)">
       <input type="email" id="regEmail" placeholder="Email">
-      <input type="password" id="regPassword" placeholder="Пароль">
+      <input type="password" id="regPassword" placeholder="Пароль (минимум 6 символов)">
       <div style="font-size: 12px; margin-bottom: 12px;">⚠️ Сохрани пароль!</div>
       <button id="doRegisterBtn" class="btn btn-primary" style="width:100%;">Создать аккаунт</button>
     </div>
   </div>
 
-  <!-- Главный экран (скрыт до входа) -->
   <div id="mainApp" style="display: none;">
     <div class="flex-between">
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -83,7 +80,7 @@
     </div>
     <div class="card">
       <div class="flex-between"><h3>📋 Задачи дня</h3><button id="refreshTasksBtn" class="btn">🔄</button></div>
-      <div id="tasksList"></div>
+      <div id="tasksList">Загрузка...</div>
       <div style="font-size:13px; margin-top:8px;">⭐ За все задачи +100 ₸</div>
     </div>
     <div class="card">
@@ -107,7 +104,6 @@
   </div>
 </div>
 
-<!-- Модальное окно настроек -->
 <div id="settingsModal" class="modal">
   <div class="modal-content">
     <span class="close-btn">&times;</span>
@@ -127,7 +123,6 @@
 </div>
 
 <script>
-  // ========== SUPABASE ==========
   const SUPABASE_URL = "https://sebsaslqngrvjsywtrjz.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNhc2xqbmdydmpzeXd0cmp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NzIwMjEsImV4cCI6MjA5MTI0ODAyMX0.tka6zqyCwhR10pGPul-9H6e57CO18Rk4BEda1YLHUj8";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -149,13 +144,13 @@
     let templates = taskPools[goal] || taskPools.discipline;
     let count = mood === "motivation" ? 4 : (mood === "empty" ? 2 : 3);
     let tasks = [];
-    for (let i=0; i<count; i++) {
+    for (let i = 0; i < count; i++) {
       let tmpl = templates[i % templates.length];
-      let task = tmpl.replace("{count}", (Math.floor(Math.random()*20)+5))
-                     .replace("{minutes}", (Math.floor(Math.random()*30)+5))
-                     .replace("{exercise}", exercises[Math.floor(Math.random()*exercises.length)])
-                     .replace("{skill}", skills[Math.floor(Math.random()*skills.length)])
-                     .replace("{micro}", micros[Math.floor(Math.random()*micros.length)]);
+      let task = tmpl.replace("{count}", (Math.floor(Math.random() * 20) + 5))
+        .replace("{minutes}", (Math.floor(Math.random() * 30) + 5))
+        .replace("{exercise}", exercises[Math.floor(Math.random() * exercises.length)])
+        .replace("{skill}", skills[Math.floor(Math.random() * skills.length)])
+        .replace("{micro}", micros[Math.floor(Math.random() * micros.length)]);
       tasks.push(task);
     }
     if (streak >= 5) tasks = tasks.map(t => "⭐ " + t);
@@ -201,7 +196,7 @@
   }
 
   async function checkNewDay() {
-    const today = new Date().toISOString().slice(0,10);
+    const today = new Date().toISOString().slice(0, 10);
     if (!userData.last_date) { userData.last_date = today; return; }
     if (userData.last_date === today) return;
     let penalty = 0;
@@ -286,23 +281,23 @@
     if (!userData) return;
     document.getElementById('streakDays').innerText = userData.streak;
     document.getElementById('bestStreak').innerText = userData.best_streak;
-    let percent = Math.min(100, (userData.streak/(userData.streak+7))*100);
-    document.getElementById('streakFill').style.width = percent+'%';
-    document.getElementById('goalLabel').innerText = {discipline:'Дисциплина',money:'Карьера',apathy:'Апатия'}[userData.goal];
-    document.getElementById('moodLabel').innerText = {empty:'Пусто',normal:'Норм',anger:'Злость',motivation:'Мощь'}[userData.mood];
+    let percent = Math.min(100, (userData.streak / (userData.streak + 7)) * 100);
+    document.getElementById('streakFill').style.width = percent + '%';
+    document.getElementById('goalLabel').innerText = { discipline: 'Дисциплина', money: 'Карьера', apathy: 'Апатия' }[userData.goal];
+    document.getElementById('moodLabel').innerText = { empty: 'Пусто', normal: 'Норм', anger: 'Злость', motivation: 'Мощь' }[userData.mood];
     document.getElementById('walletBalance').innerText = userData.balance;
     let premiumActive = userData.premium_until > Date.now();
     document.getElementById('premiumBadge').innerHTML = premiumActive ? '👑 Premium' : '⚡ Обычный';
-    
+
     let tasksHtml = '';
-    for (let i=0; i<userData.daily_tasks.length; i++) {
+    for (let i = 0; i < userData.daily_tasks.length; i++) {
       let task = userData.daily_tasks[i];
       let done = userData.completed_tasks.includes(i);
       let needVerify = userData.verification && userData.verification.taskIndex === i;
       let photos = await getPhotos(i);
-      tasksHtml += `<div class="task-item ${done?'completed':''}">
+      tasksHtml += `<div class="task-item ${done ? 'completed' : ''}">
         <div class="task-header">
-          <span style="${done?'text-decoration:line-through;opacity:0.7':''}">${task}</span>
+          <span style="${done ? 'text-decoration:line-through;opacity:0.7' : ''}">${task}</span>
           ${needVerify ? '<span class="verification-badge">📸 Фото обязательно</span>' : ''}
           <button class="completeBtn" data-idx="${i}" ${done ? 'disabled' : ''}>✅</button>
         </div>
@@ -330,7 +325,7 @@
   }
 
   function renderHistory() {
-    let html = (userData.history || []).slice(0,8).map(h => `<div><small>${h.time}</small> ${h.text}</div>`).join('');
+    let html = (userData.history || []).slice(0, 8).map(h => `<div><small>${h.time}</small> ${h.text}</div>`).join('');
     document.getElementById('historyList').innerHTML = html || '—';
   }
 
@@ -342,13 +337,13 @@
     if (thought.includes('устал')) advice = "Отдых — тоже часть пути. 5 минут тишины.";
     document.getElementById('adviceOutput').innerHTML = `<strong>🧠 Совет:</strong> ${advice}`;
     document.getElementById('adviceOutput').style.display = 'block';
-    addHistory(`Рефлексия: ${thought.slice(0,40)}...`);
+    addHistory(`Рефлексия: ${thought.slice(0, 40)}...`);
   }
 
   async function buyPremium() {
     if (userData.balance >= 1000) {
       userData.balance -= 1000;
-      userData.premium_until = Date.now() + 7*24*3600*1000;
+      userData.premium_until = Date.now() + 7 * 24 * 3600 * 1000;
       await updateUserData({ balance: userData.balance, premium_until: userData.premium_until });
       alert("Premium на неделю активирован!");
       renderDashboard();
@@ -356,7 +351,7 @@
   }
   async function trialPremium() {
     if (userData.premium_until > Date.now()) { alert("Уже есть премиум"); return; }
-    userData.premium_until = Date.now() + 3*24*3600*1000;
+    userData.premium_until = Date.now() + 3 * 24 * 3600 * 1000;
     await updateUserData({ premium_until: userData.premium_until });
     alert("Пробная версия на 3 дня!");
     renderDashboard();
@@ -369,7 +364,7 @@
   }
   function kaspiPay() {
     let amount = prompt("Сумма пополнения (мин 100 ₸):", "1000");
-    if (amount && amount>=100) {
+    if (amount && amount >= 100) {
       alert(`Перейдите по ссылке для оплаты: https://kaspi.kz/pay?amount=${amount}&description=Qadam`);
     }
   }
@@ -407,20 +402,26 @@
   };
   document.getElementById('logoutSettingsBtn').onclick = () => supabase.auth.signOut();
 
-  // ========== АВТОРИЗАЦИЯ ==========
-  document.getElementById('loginTabBtn').onclick = () => {
-    document.getElementById('loginTabBtn').classList.add('btn-primary');
-    document.getElementById('registerTabBtn').classList.remove('btn-primary');
-    document.getElementById('loginPanel').style.display = 'block';
-    document.getElementById('registerPanel').style.display = 'none';
-  };
-  document.getElementById('registerTabBtn').onclick = () => {
-    document.getElementById('registerTabBtn').classList.add('btn-primary');
-    document.getElementById('loginTabBtn').classList.remove('btn-primary');
-    document.getElementById('loginPanel').style.display = 'none';
-    document.getElementById('registerPanel').style.display = 'block';
+  // ========== АВТОРИЗАЦИЯ (ИСПРАВЛЕНА) ==========
+  const loginBtn = document.getElementById('loginTabBtn');
+  const registerBtn = document.getElementById('registerTabBtn');
+  const loginPanel = document.getElementById('loginPanel');
+  const registerPanel = document.getElementById('registerPanel');
+
+  loginBtn.onclick = function() {
+    loginBtn.classList.add('btn-primary');
+    registerBtn.classList.remove('btn-primary');
+    loginPanel.style.display = 'block';
+    registerPanel.style.display = 'none';
   };
   
+  registerBtn.onclick = function() {
+    registerBtn.classList.add('btn-primary');
+    loginBtn.classList.remove('btn-primary');
+    loginPanel.style.display = 'none';
+    registerPanel.style.display = 'block';
+  };
+
   document.getElementById('doLoginBtn').onclick = async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -428,33 +429,34 @@
     if (error) alert("Ошибка входа: " + error.message);
     else alert("Добро пожаловать!");
   };
-  
+
   document.getElementById('doRegisterBtn').onclick = async () => {
     const nick = document.getElementById('regNick').value.trim();
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
-    if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: буквы/цифры/_, 3-20 символов"); return; }
-    const { error } = await supabase.auth.signUp({ 
-      email, password, 
-      options: { data: { nickname: nick } } 
+    if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: латиница/цифры/_, 3-20 символов"); return; }
+    if (password.length < 6) { alert("Пароль должен быть не менее 6 символов"); return; }
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { nickname: nick } }
     });
     if (error) alert("Ошибка регистрации: " + error.message);
     else alert("Регистрация успешна! Теперь войдите.");
   };
-  
+
   document.getElementById('getAdviceBtn').onclick = getAdvice;
   document.getElementById('buyPremiumBtn').onclick = buyPremium;
   document.getElementById('trialPremiumBtn').onclick = trialPremium;
   document.getElementById('withdrawBtn').onclick = requestWithdraw;
   document.getElementById('kaspiPayBtn').onclick = kaspiPay;
-  document.getElementById('refreshTasksBtn').onclick = async () => { 
-    if(userData){ 
-      userData.daily_tasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood); 
-      userData.completed_tasks=[]; 
-      await updateUserData({daily_tasks: userData.daily_tasks, completed_tasks:[]}); 
-      renderDashboard(); 
-      alert("Задачи обновлены"); 
-    } 
+  document.getElementById('refreshTasksBtn').onclick = async () => {
+    if (userData) {
+      userData.daily_tasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
+      userData.completed_tasks = [];
+      await updateUserData({ daily_tasks: userData.daily_tasks, completed_tasks: [] });
+      renderDashboard();
+      alert("Задачи обновлены");
+    }
   };
 
   supabase.auth.onAuthStateChange(async (event, session) => {
