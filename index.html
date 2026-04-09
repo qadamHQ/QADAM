@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Qadam — Дисциплина + заработок до 100₸/день</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Qadam — Дисциплина + сила воли</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Segoe UI', Roboto; }
     body { background: #0a0a0c; color: #eee; padding: 16px; transition: background 0.2s, color 0.2s; }
@@ -41,30 +40,26 @@
 </head>
 <body>
 <div class="container">
-  <!-- Экран авторизации -->
+  <!-- Экран входа / регистрации (локальный) -->
   <div id="authScreen" class="card" style="text-align: center;">
     <h1>QADAM</h1>
-    <p style="margin: 16px 0;">Дисциплина + заработок до 100 ₸/день</p>
+    <p style="margin: 16px 0;">Дисциплина + заработок до 100 ₸/день (демо-режим)</p>
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <button id="loginTabBtn" class="btn btn-primary" style="flex:1;">Вход</button>
       <button id="registerTabBtn" class="btn" style="flex:1;">Регистрация</button>
     </div>
-    
     <div id="loginPanel">
-      <input type="email" id="loginEmail" placeholder="Email">
-      <input type="password" id="loginPassword" placeholder="Пароль">
+      <input type="text" id="loginNick" placeholder="Ваш ник">
       <button id="doLoginBtn" class="btn btn-primary" style="width:100%;">Войти</button>
     </div>
-    
     <div id="registerPanel" style="display: none;">
-      <input type="text" id="regNick" placeholder="Ник (латиница/цифры/_, 3-20 символов)">
-      <input type="email" id="regEmail" placeholder="Email">
-      <input type="password" id="regPassword" placeholder="Пароль (минимум 6 символов)">
-      <div style="font-size: 12px; margin-bottom: 12px;">⚠️ Сохрани пароль!</div>
+      <input type="text" id="regNick" placeholder="Новый ник (латиница/цифры/_, 3-20 символов)">
       <button id="doRegisterBtn" class="btn btn-primary" style="width:100%;">Создать аккаунт</button>
     </div>
+    <div style="font-size: 12px; margin-top: 12px;">🔒 Все данные хранятся только на вашем устройстве</div>
   </div>
 
+  <!-- Главный экран -->
   <div id="mainApp" style="display: none;">
     <div class="flex-between">
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -94,8 +89,7 @@
       <p>Баланс: <strong id="walletBalance">0</strong> ₸</p>
       <button id="buyPremiumBtn" class="btn btn-primary" style="width:100%;">Premium за 1000 ₸ (неделя)</button>
       <button id="trialPremiumBtn" class="btn" style="width:100%;">Пробная версия 3 дня</button>
-      <button id="withdrawBtn" class="btn" style="width:100%;">📤 Запросить вывод (от 5000 ₸)</button>
-      <button id="kaspiPayBtn" class="btn" style="width:100%; background:#0066b3;">💳 Пополнить Kaspi Pay</button>
+      <div style="font-size:12px; margin-top:8px;">💡 Режим демо — реальные выплаты появятся позже</div>
     </div>
     <div class="card">
       <h3>📜 История</h3>
@@ -108,12 +102,9 @@
   <div class="modal-content">
     <span class="close-btn">&times;</span>
     <h3>⚙️ Настройки</h3>
-    <p><strong>🆔 Ваш ID:</strong> <span id="userIdNumber">—</span></p>
+    <p><strong>👤 Ник:</strong> <span id="userNickname"></span></p>
     <input type="text" id="changeNickInput" placeholder="Новый ник">
     <button id="changeNickBtn" class="btn btn-primary" style="width:100%;">Сменить ник</button>
-    <input type="password" id="oldPasswordInput" placeholder="Старый пароль">
-    <input type="password" id="newPasswordInput" placeholder="Новый пароль">
-    <button id="changePasswordBtn" class="btn btn-primary" style="width:100%;">Сменить пароль</button>
     <select id="themeSelect" style="width:100%;">
       <option value="dark">🌙 Тёмная тема</option>
       <option value="light">☀️ Светлая тема</option>
@@ -123,10 +114,7 @@
 </div>
 
 <script>
-  const SUPABASE_URL = "https://sebsaslqngrvjsywtrjz.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNhc2xqbmdydmpzeXd0cmp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NzIwMjEsImV4cCI6MjA5MTI0ODAyMX0.tka6zqyCwhR10pGPul-9H6e57CO18Rk4BEda1YLHUj8";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+  // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
   let currentUser = null;
   let userData = null;
 
@@ -160,42 +148,51 @@
     return tasks;
   }
 
-  async function updateUserData(updates) {
-    await supabase.from('users').update(updates).eq('id', currentUser.id);
-    if (userData) Object.assign(userData, updates);
-  }
-
-  async function loadUserData() {
-    let { data, error } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
-    if (error && error.code !== 'PGRST116') { console.error(error); return; }
-    if (data) {
-      userData = data;
-      if (typeof userData.daily_tasks === 'string') userData.daily_tasks = JSON.parse(userData.daily_tasks);
-      if (!userData.daily_tasks) userData.daily_tasks = [];
-      if (!userData.completed_tasks) userData.completed_tasks = [];
-      if (!userData.history) userData.history = [];
-    } else {
-      let { data: counterData } = await supabase.from('counter').select('last_id').single();
-      let newId = counterData ? counterData.last_id + 1 : 1;
-      if (currentUser.email === 'assakill799@gmail.com') newId = 0;
-      await supabase.from('counter').upsert({ id: 1, last_id: newId });
-      const userIdNumber = String(newId).padStart(5, '0');
-      userData = {
-        id: currentUser.id, nickname: currentUser.user_metadata?.nickname || currentUser.email.split('@')[0],
-        balance: 0, streak: 0, best_streak: 0, premium_until: 0,
-        goal: 'discipline', mood: 'normal', difficulty: 'normal',
-        history: [], last_date: null, daily_tasks: [], completed_tasks: [],
-        verification: null, user_number: userIdNumber, theme: 'dark'
-      };
-      await supabase.from('users').insert(userData);
+  // ========== РАБОТА С LOCALSTORAGE ==========
+  function saveUserData() {
+    if (currentUser && userData) {
+      let allUsers = JSON.parse(localStorage.getItem('qadam_users') || '{}');
+      allUsers[currentUser] = userData;
+      localStorage.setItem('qadam_users', JSON.stringify(allUsers));
+      localStorage.setItem('qadam_current_user', currentUser);
     }
-    if (userData.theme === 'light') document.body.classList.add('light');
-    else document.body.classList.remove('light');
-    document.getElementById('themeSelect').value = userData.theme || 'dark';
-    renderDashboard();
   }
 
-  async function checkNewDay() {
+  function loadUserData(nickname) {
+    let allUsers = JSON.parse(localStorage.getItem('qadam_users') || '{}');
+    if (allUsers[nickname]) {
+      userData = allUsers[nickname];
+      return true;
+    }
+    return false;
+  }
+
+  function createNewUser(nickname) {
+    let allUsers = JSON.parse(localStorage.getItem('qadam_users') || '{}');
+    if (allUsers[nickname]) return false;
+    userData = {
+      nickname: nickname,
+      balance: 0,
+      streak: 0,
+      best_streak: 0,
+      premium_until: 0,
+      goal: 'discipline',
+      mood: 'normal',
+      difficulty: 'normal',
+      history: [],
+      last_date: null,
+      daily_tasks: [],
+      completed_tasks: [],
+      verification: null,
+      taskPhotos: {},
+      theme: 'dark'
+    };
+    allUsers[nickname] = userData;
+    localStorage.setItem('qadam_users', JSON.stringify(allUsers));
+    return true;
+  }
+
+  function checkNewDay() {
     const today = new Date().toISOString().slice(0, 10);
     if (!userData.last_date) { userData.last_date = today; return; }
     if (userData.last_date === today) return;
@@ -216,16 +213,16 @@
       userData.verification = { taskIndex: randIdx, photoRequired: true };
       addHistory(`🔍 Проверка: фото для "${userData.daily_tasks[randIdx]}"`);
     } else userData.verification = null;
-    await updateUserData({ streak: userData.streak, last_date: userData.last_date, completed_tasks: [], daily_tasks: userData.daily_tasks, verification: userData.verification });
+    saveUserData();
     renderDashboard();
   }
 
-  async function completeTask(idx) {
+  function completeTask(idx) {
     if (userData.completed_tasks.includes(idx)) return;
     let needPhoto = userData.verification && userData.verification.taskIndex === idx;
     if (needPhoto) {
-      let { data: photos } = await supabase.from('task_photos').select('photo_url').eq('user_id', currentUser.id).eq('task_index', idx);
-      if (!photos || photos.length === 0) { alert("⚠️ Сначала загрузи фото к этой задаче!"); return; }
+      let photos = userData.taskPhotos?.[idx] || [];
+      if (photos.length === 0) { alert("⚠️ Сначала загрузи фото к этой задаче!"); return; }
     }
     userData.completed_tasks.push(idx);
     let allDone = userData.completed_tasks.length === userData.daily_tasks.length;
@@ -238,46 +235,42 @@
         alert("🎁 БОНУС! 3 дня подряд!");
         addHistory(`🎁 Бонус за серию ${userData.streak}`);
       }
-      await updateUserData({ balance: userData.balance, streak: userData.streak, best_streak: userData.best_streak, completed_tasks: userData.completed_tasks });
-      if (userData.verification) await updateUserData({ verification: null });
-    } else {
-      await updateUserData({ completed_tasks: userData.completed_tasks });
+      if (userData.verification) userData.verification = null;
     }
+    saveUserData();
     renderDashboard();
   }
 
-  async function uploadPhoto(taskIdx, file) {
+  function uploadPhoto(taskIdx, file) {
     if (!file) return;
-    let fileName = `${Date.now()}_${file.name}`;
-    let filePath = `${currentUser.id}/${taskIdx}/${fileName}`;
-    let { error } = await supabase.storage.from('task_photos').upload(filePath, file);
-    if (error) { alert("Ошибка: " + error.message); return; }
-    let { data: urlData } = supabase.storage.from('task_photos').getPublicUrl(filePath);
-    await supabase.from('task_photos').insert({ user_id: currentUser.id, task_index: taskIdx, photo_url: urlData.publicUrl });
-    alert("✅ Фото загружено!");
-    renderDashboard();
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (!userData.taskPhotos) userData.taskPhotos = {};
+      if (!userData.taskPhotos[taskIdx]) userData.taskPhotos[taskIdx] = [];
+      userData.taskPhotos[taskIdx].push(e.target.result);
+      saveUserData();
+      renderDashboard();
+      alert("✅ Фото загружено!");
+    };
+    reader.readAsDataURL(file);
   }
 
-  async function deletePhoto(photoUrl, taskIdx) {
-    let pathPart = photoUrl.split('/').slice(-3).join('/');
-    await supabase.storage.from('task_photos').remove([pathPart]);
-    await supabase.from('task_photos').delete().eq('user_id', currentUser.id).eq('task_index', taskIdx).eq('photo_url', photoUrl);
-    renderDashboard();
-  }
-
-  async function getPhotos(taskIdx) {
-    let { data } = await supabase.from('task_photos').select('photo_url').eq('user_id', currentUser.id).eq('task_index', taskIdx);
-    return data || [];
+  function deletePhoto(taskIdx, photoUrl) {
+    if (userData.taskPhotos && userData.taskPhotos[taskIdx]) {
+      userData.taskPhotos[taskIdx] = userData.taskPhotos[taskIdx].filter(url => url !== photoUrl);
+      saveUserData();
+      renderDashboard();
+    }
   }
 
   function addHistory(text) {
     userData.history.unshift({ time: new Date().toLocaleString(), text });
     if (userData.history.length > 30) userData.history.pop();
-    updateUserData({ history: userData.history });
+    saveUserData();
     renderHistory();
   }
 
-  async function renderDashboard() {
+  function renderDashboard() {
     if (!userData) return;
     document.getElementById('streakDays').innerText = userData.streak;
     document.getElementById('bestStreak').innerText = userData.best_streak;
@@ -288,20 +281,21 @@
     document.getElementById('walletBalance').innerText = userData.balance;
     let premiumActive = userData.premium_until > Date.now();
     document.getElementById('premiumBadge').innerHTML = premiumActive ? '👑 Premium' : '⚡ Обычный';
+    document.getElementById('userNickname').innerText = userData.nickname;
 
     let tasksHtml = '';
     for (let i = 0; i < userData.daily_tasks.length; i++) {
       let task = userData.daily_tasks[i];
       let done = userData.completed_tasks.includes(i);
       let needVerify = userData.verification && userData.verification.taskIndex === i;
-      let photos = await getPhotos(i);
+      let photos = userData.taskPhotos?.[i] || [];
       tasksHtml += `<div class="task-item ${done ? 'completed' : ''}">
         <div class="task-header">
           <span style="${done ? 'text-decoration:line-through;opacity:0.7' : ''}">${task}</span>
           ${needVerify ? '<span class="verification-badge">📸 Фото обязательно</span>' : ''}
           <button class="completeBtn" data-idx="${i}" ${done ? 'disabled' : ''}>✅</button>
         </div>
-        <div class="task-photos">` + photos.map(p => `<img src="${p.photo_url}" class="task-photo" onclick="window.open('${p.photo_url}')"><button class="delete-photo-btn" data-url="${p.photo_url}" data-idx="${i}">🗑️</button>`).join('') + `</div>
+        <div class="task-photos">` + photos.map(p => `<img src="${p}" class="task-photo" onclick="window.open('${p}')"><button class="delete-photo-btn" data-url="${p}" data-idx="${i}">🗑️</button>`).join('') + `</div>
         <div class="photo-upload">
           <input type="file" id="fileInput_${i}" accept="image/*" style="display:inline-block; width:auto;">
           <button class="uploadBtn" data-idx="${i}">📸 Загрузить фото</button>
@@ -319,7 +313,7 @@
       };
     });
     document.querySelectorAll('.delete-photo-btn').forEach(btn => {
-      btn.onclick = () => deletePhoto(btn.dataset.url, parseInt(btn.dataset.idx));
+      btn.onclick = () => deletePhoto(parseInt(btn.dataset.idx), btn.dataset.url);
     });
     renderHistory();
   }
@@ -329,7 +323,7 @@
     document.getElementById('historyList').innerHTML = html || '—';
   }
 
-  async function getAdvice() {
+  function getAdvice() {
     let thought = document.getElementById('thoughtInput').value.trim();
     if (!thought) { alert("Напиши что-нибудь"); return; }
     let advice = "Твой путь важен. Сделай маленький шаг.";
@@ -340,140 +334,131 @@
     addHistory(`Рефлексия: ${thought.slice(0, 40)}...`);
   }
 
-  async function buyPremium() {
+  function buyPremium() {
     if (userData.balance >= 1000) {
       userData.balance -= 1000;
       userData.premium_until = Date.now() + 7 * 24 * 3600 * 1000;
-      await updateUserData({ balance: userData.balance, premium_until: userData.premium_until });
+      saveUserData();
       alert("Premium на неделю активирован!");
       renderDashboard();
     } else alert("Недостаточно тенге");
   }
-  async function trialPremium() {
+  function trialPremium() {
     if (userData.premium_until > Date.now()) { alert("Уже есть премиум"); return; }
     userData.premium_until = Date.now() + 3 * 24 * 3600 * 1000;
-    await updateUserData({ premium_until: userData.premium_until });
+    saveUserData();
     alert("Пробная версия на 3 дня!");
     renderDashboard();
-  }
-  async function requestWithdraw() {
-    if (userData.balance >= 5000) {
-      addHistory(`💰 Заявка на вывод ${userData.balance} ₸`);
-      alert("Заявка отправлена! Амин свяжется.");
-    } else alert("Минимум 5000 ₸");
-  }
-  function kaspiPay() {
-    let amount = prompt("Сумма пополнения (мин 100 ₸):", "1000");
-    if (amount && amount >= 100) {
-      alert(`Перейдите по ссылке для оплаты: https://kaspi.kz/pay?amount=${amount}&description=Qadam`);
-    }
   }
 
   // ========== НАСТРОЙКИ ==========
   const modal = document.getElementById('settingsModal');
-  document.getElementById('settingsBtn').onclick = () => {
-    if (userData) document.getElementById('userIdNumber').innerText = userData.user_number || '00000';
-    modal.style.display = 'flex';
-  };
+  document.getElementById('settingsBtn').onclick = () => { modal.style.display = 'flex'; };
   document.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
   window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-  document.getElementById('changeNickBtn').onclick = async () => {
+  document.getElementById('changeNickBtn').onclick = () => {
     let newNick = document.getElementById('changeNickInput').value.trim();
-    if (!newNick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: буквы/цифры/_, 3-20 символов"); return; }
-    let { data: existing } = await supabase.from('users').select('id').eq('nickname', newNick);
-    if (existing && existing.length > 0 && existing[0].id !== currentUser.id) { alert("Ник уже занят"); return; }
-    await updateUserData({ nickname: newNick });
-    alert("Ник изменён!");
+    if (!newNick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: латиница/цифры/_, 3-20 символов"); return; }
+    let allUsers = JSON.parse(localStorage.getItem('qadam_users') || '{}');
+    if (allUsers[newNick] && newNick !== currentUser) { alert("Ник уже занят"); return; }
+    allUsers[newNick] = userData;
+    delete allUsers[currentUser];
+    userData.nickname = newNick;
+    localStorage.setItem('qadam_users', JSON.stringify(allUsers));
+    localStorage.setItem('qadam_current_user', newNick);
+    currentUser = newNick;
     modal.style.display = 'none';
+    renderDashboard();
+    alert("Ник изменён!");
   };
-  document.getElementById('changePasswordBtn').onclick = async () => {
-    let newPass = document.getElementById('newPasswordInput').value;
-    if (newPass.length < 6) { alert("Новый пароль должен быть не менее 6 символов"); return; }
-    let { error } = await supabase.auth.updateUser({ password: newPass });
-    if (error) alert("Ошибка: " + error.message);
-    else { alert("Пароль изменён!"); modal.style.display = 'none'; }
-  };
-  document.getElementById('themeSelect').onchange = async (e) => {
+  document.getElementById('themeSelect').onchange = (e) => {
     let theme = e.target.value;
     if (theme === 'light') document.body.classList.add('light');
     else document.body.classList.remove('light');
-    if (userData) await updateUserData({ theme: theme });
+    userData.theme = theme;
+    saveUserData();
   };
-  document.getElementById('logoutSettingsBtn').onclick = () => supabase.auth.signOut();
+  document.getElementById('logoutSettingsBtn').onclick = () => {
+    localStorage.removeItem('qadam_current_user');
+    location.reload();
+  };
 
-  // ========== АВТОРИЗАЦИЯ (ИСПРАВЛЕНА) ==========
+  // ========== АВТОРИЗАЦИЯ ==========
   const loginBtn = document.getElementById('loginTabBtn');
   const registerBtn = document.getElementById('registerTabBtn');
   const loginPanel = document.getElementById('loginPanel');
   const registerPanel = document.getElementById('registerPanel');
 
-  loginBtn.onclick = function() {
+  loginBtn.onclick = () => {
     loginBtn.classList.add('btn-primary');
     registerBtn.classList.remove('btn-primary');
     loginPanel.style.display = 'block';
     registerPanel.style.display = 'none';
   };
-  
-  registerBtn.onclick = function() {
+  registerBtn.onclick = () => {
     registerBtn.classList.add('btn-primary');
     loginBtn.classList.remove('btn-primary');
     loginPanel.style.display = 'none';
     registerPanel.style.display = 'block';
   };
 
-  document.getElementById('doLoginBtn').onclick = async () => {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert("Ошибка входа: " + error.message);
-    else alert("Добро пожаловать!");
+  document.getElementById('doLoginBtn').onclick = () => {
+    const nick = document.getElementById('loginNick').value.trim();
+    if (!nick) { alert("Введите ник"); return; }
+    if (loadUserData(nick)) {
+      currentUser = nick;
+      localStorage.setItem('qadam_current_user', currentUser);
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      if (userData.theme === 'light') document.body.classList.add('light');
+      document.getElementById('themeSelect').value = userData.theme || 'dark';
+      checkNewDay();
+      renderDashboard();
+    } else {
+      alert("Пользователь не найден. Зарегистрируйтесь.");
+    }
   };
 
-  document.getElementById('doRegisterBtn').onclick = async () => {
+  document.getElementById('doRegisterBtn').onclick = () => {
     const nick = document.getElementById('regNick').value.trim();
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
     if (!nick.match(/^[a-zA-Z0-9_]{3,20}$/)) { alert("Ник: латиница/цифры/_, 3-20 символов"); return; }
-    if (password.length < 6) { alert("Пароль должен быть не менее 6 символов"); return; }
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { nickname: nick } }
-    });
-    if (error) alert("Ошибка регистрации: " + error.message);
-    else alert("Регистрация успешна! Теперь войдите.");
+    if (createNewUser(nick)) {
+      alert("Аккаунт создан! Теперь войдите.");
+      document.getElementById('loginNick').value = nick;
+      loginBtn.click();
+    } else {
+      alert("Ник уже занят");
+    }
   };
 
   document.getElementById('getAdviceBtn').onclick = getAdvice;
   document.getElementById('buyPremiumBtn').onclick = buyPremium;
   document.getElementById('trialPremiumBtn').onclick = trialPremium;
-  document.getElementById('withdrawBtn').onclick = requestWithdraw;
-  document.getElementById('kaspiPayBtn').onclick = kaspiPay;
-  document.getElementById('refreshTasksBtn').onclick = async () => {
+  document.getElementById('refreshTasksBtn').onclick = () => {
     if (userData) {
       userData.daily_tasks = getDailyTasks(userData.goal, userData.difficulty, userData.streak, userData.mood);
       userData.completed_tasks = [];
-      await updateUserData({ daily_tasks: userData.daily_tasks, completed_tasks: [] });
+      saveUserData();
       renderDashboard();
       alert("Задачи обновлены");
     }
   };
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-      currentUser = session.user;
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      await loadUserData();
-      await checkNewDay();
-      renderDashboard();
-    } else {
-      document.getElementById('authScreen').style.display = 'block';
-      document.getElementById('mainApp').style.display = 'none';
-      currentUser = null;
-      userData = null;
-    }
-  });
+  // Проверка сохранённой сессии
+  const savedUser = localStorage.getItem('qadam_current_user');
+  if (savedUser && loadUserData(savedUser)) {
+    currentUser = savedUser;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    if (userData.theme === 'light') document.body.classList.add('light');
+    document.getElementById('themeSelect').value = userData.theme || 'dark';
+    checkNewDay();
+    renderDashboard();
+  } else {
+    document.getElementById('authScreen').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+  }
 </script>
 </body>
 </html>
