@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Qadam — Дисциплина + заработок до 100₸/день</title>
+  <title>Qadam — Дисциплин + заработок до 100₸/день</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Segoe UI', Roboto; }
@@ -181,7 +181,7 @@
       if (!userData.completed_tasks) userData.completed_tasks = [];
       if (!userData.history) userData.history = [];
     } else {
-      // Новый пользователь — получаем следующий ID
+      // Получаем следующий ID
       let { data: counterData } = await supabase.from('counter').select('last_id').single();
       let newId = counterData ? counterData.last_id + 1 : 1;
       if (currentUser.email === 'assakill799@gmail.com') newId = 0;
@@ -189,7 +189,8 @@
       const userIdNumber = String(newId).padStart(5, '0');
       
       userData = {
-        id: currentUser.id, nickname: currentUser.user_metadata?.nickname || currentUser.email.split('@')[0], 
+        id: currentUser.id, 
+        nickname: currentUser.user_metadata?.nickname || currentUser.email.split('@')[0], 
         balance: 0, streak: 0, best_streak: 0, premium_until: 0, 
         goal: 'discipline', mood: 'normal', difficulty: 'normal', 
         history: [], last_date: null, daily_tasks: [], completed_tasks: [], 
@@ -377,7 +378,7 @@
     }
   }
 
-  // ========== НАСТРОЙКИ (модальное окно) ==========
+  // ========== НАСТРОЙКИ ==========
   const modal = document.getElementById('settingsModal');
   document.getElementById('settingsBtn').onclick = () => {
     document.getElementById('userIdNumber').innerText = userData.user_number || '00000';
@@ -411,7 +412,7 @@
   };
   document.getElementById('logoutSettingsBtn').onclick = () => supabase.auth.signOut();
 
-  // ========== АВТОРИЗАЦИЯ (ПРОСТАЯ И ПОНЯТНАЯ) ==========
+  // ========== АВТОРИЗАЦИЯ ==========
   document.getElementById('loginTabBtn').onclick = () => { 
     document.getElementById('loginPanel').style.display = 'block'; 
     document.getElementById('registerPanel').style.display = 'none'; 
@@ -439,7 +440,7 @@
       options: { data: { nickname: nick } } 
     });
     if (error) alert("Ошибка регистрации: " + error.message);
-    else alert("Регистрация успешна! Проверьте email (если требуется подтверждение) и войдите.");
+    else alert("Регистрация успешна! Теперь войдите.");
   };
   
   document.getElementById('getAdviceBtn').onclick = getAdvice;
